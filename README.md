@@ -84,10 +84,12 @@ Open a **new terminal** window:
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 Frontend will start at: **http://localhost:3000**
+
+**Note:** We use **Vite** instead of create-react-app for faster builds and zero dependency conflicts!
 
 ---
 
@@ -129,11 +131,14 @@ HTF25-Team-250/
 - **Requests** - HTTP client for external APIs
 
 ### Frontend
+- **Vite** - Lightning-fast build tool (⚡ replaces create-react-app)
 - **React** - UI framework
 - **Leaflet.js** - Interactive mapping library
 - **react-leaflet** - React bindings for Leaflet
-- **Leaflet.heat** - Heatmap visualization
+- **Leaflet.heat** - Heatmap visualization (Phase 4)
 - **WebSocket API** - Real-time data streaming
+
+**Why Vite?** Modern ES modules, instant HMR, zero ajv conflicts, 90% fewer dependencies!
 
 ### APIs & Data Sources
 - **BMTC API** - Live bus GPS coordinates

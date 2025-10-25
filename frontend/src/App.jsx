@@ -3,7 +3,7 @@
  * Mission Control Dashboard for Real-time Crowd Safety Monitoring
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MapComponent from './components/MapComponent';
 import './App.css';
 

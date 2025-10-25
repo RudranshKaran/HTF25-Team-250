@@ -3,7 +3,6 @@
  * Uses Mapbox satellite tiles for base layer
  */
 
-import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -22,9 +21,6 @@ const BENGALURU_CENTER = [12.9791, 77.5993];
 const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
 const MG_ROAD_METRO = [12.9756, 77.6057];
 
-// Mapbox access token (using placeholder - users should replace with their own)
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-
 function MapComponent() {
   return (
     <div className="map-wrapper">
@@ -34,13 +30,11 @@ function MapComponent() {
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
       >
-        {/* Mapbox Satellite Tile Layer */}
+        {/* OpenStreetMap Tile Layer - No API key required! */}
         <TileLayer
-          attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-          url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`}
-          tileSize={512}
-          zoomOffset={-1}
-          maxZoom={18}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
 
         {/* Key Location Markers */}

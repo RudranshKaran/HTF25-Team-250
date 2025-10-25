@@ -69,7 +69,8 @@
   box-shadow: 0 0 10px #ffa500;
 }
 
-.status-indicator.disconnected .status-dot {
+.status-indicator.disconnected .status-dot,
+.status-indicator.error .status-dot {
   background: #ff4444;
   box-shadow: 0 0 10px #ff4444;
 }
@@ -156,7 +157,8 @@
   color: #00ff88;
 }
 
-.status-item .value.disconnected {
+.status-item .value.disconnected,
+.status-item .value.error {
   color: #ff4444;
 }
 
@@ -250,4 +252,3 @@
 .side-panel::-webkit-scrollbar-thumb:hover {
   background: #357abd;
 }
-
