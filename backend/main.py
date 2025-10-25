@@ -16,6 +16,7 @@ from simulations import (
     simulate_metro_flow, simulate_crowd_density, check_alerts,
     format_metro_summary, format_density_summary
 )
+from history_manager import history_manager
 
 # Load environment variables
 load_dotenv()
@@ -166,6 +167,12 @@ async def metro_simulation_task():
                 metro_data = simulate_metro_flow()
                 latest_metro_data = metro_data
                 
+                # Add to history
+                history_manager.add_metro_data(metro_data)
+                
+                # Add trend to data
+                metro_data['trend'] = history_manager.get_metro_trend()
+                
                 await manager.broadcast(metro_data)
                 print(f"🚇 Metro broadcast: {format_metro_summary(metro_data)}")
                 
@@ -196,6 +203,13 @@ async def density_simulation_task():
                 density_data = simulate_crowd_density()
                 latest_density_data = density_data
                 
+                # Add to history
+                history_manager.add_density_data(density_data)
+                
+                # Add trends to data
+                density_data['trend'] = history_manager.get_density_trend()
+                density_data['prediction'] = history_manager.predict_next_alert()
+                
                 await manager.broadcast(density_data)
                 print(f"🔥 Density broadcast: {format_density_summary(density_data)}")
                 
@@ -203,6 +217,7 @@ async def density_simulation_task():
                 if latest_metro_data:
                     alerts = check_alerts(density_data, latest_metro_data)
                     for alert in alerts:
+                        history_manager.add_alert(alert)  # Add to history
                         await manager.broadcast(alert)
                         print(f"⚠️  Alert: {alert['level'].upper()} - {alert['message']}")
                         
@@ -224,11 +239,48 @@ async def root():
 
 @app.get("/api/status")
 async def status():
-    """System status endpoint"""
+    """System status endpoint with history stats"""
+    history_stats = history_manager.get_history_summary()['stats']
+    
     return {
         "backend_status": "operational",
         "websocket_connections": len(manager.active_connections),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "history_stats": history_stats,
+        "alert_count": history_stats['total_alerts'],
+        "trends": {
+            "density": history_manager.get_density_trend(),
+            "metro": history_manager.get_metro_trend()
+        }
+    }
+
+@app.get("/api/history")
+async def get_history():
+    """Get historical data for analytics"""
+    return history_manager.get_history_summary()
+
+@app.get("/api/charts")
+async def get_chart_data():
+    """Get data formatted for charts"""
+    return history_manager.get_chart_data()
+
+@app.get("/api/export")
+async def export_data():
+    """Export all current data as JSON"""
+    history = history_manager.get_history_summary()
+    
+    return {
+        "export_time": datetime.now().isoformat(),
+        "system_info": {
+            "name": "Crowd Safety Intelligence System",
+            "location": "Bengaluru - M. Chinnaswamy Stadium",
+            "version": "1.0.0"
+        },
+        "current_state": {
+            "density": latest_density_data,
+            "metro": latest_metro_data
+        },
+        "history": history
     }
 
 @app.websocket("/ws")

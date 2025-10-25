@@ -8,6 +8,8 @@ import MapComponent from './components/MapComponent';
 import WeatherWidget from './components/WeatherWidget';
 import MetroFlowWidget from './components/MetroFlowWidget';
 import AlertBanner from './components/AlertBanner';
+import AnalyticsPanel from './components/AnalyticsPanel';
+import AlertHistory from './components/AlertHistory';
 import './App.css';
 
 function App() {
@@ -138,6 +140,44 @@ function App() {
     }
   };
 
+  // Export data function
+  const exportData = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/export');
+      const data = await response.json();
+      
+      // Create downloadable JSON file
+      const dataStr = JSON.stringify(data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.download = `crowd_safety_data_${timestamp}.json`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('✅ Data exported successfully');
+    } catch (error) {
+      console.error('Failed to export data:', error);
+    }
+  };
+
+  // Get trend emoji
+  const getTrendEmoji = (trend) => {
+    switch(trend) {
+      case 'increasing': return '↗️';
+      case 'decreasing': return '↘️';
+      case 'stable': return '→';
+      default: return '';
+    }
+  };
+
   return (
     <div className="App">
       {/* Header */}
@@ -209,7 +249,11 @@ function App() {
               <div className="status-item">
                 <span className="label">Max Density:</span>
                 <span className="value density-value">
-                  {densityData ? densityData.max_density : '-'}
+                  {densityData ? (
+                    <>
+                      {densityData.max_density} {getTrendEmoji(densityData.trend)}
+                    </>
+                  ) : '-'}
                 </span>
               </div>
               <div className="status-item">
@@ -228,14 +272,26 @@ function App() {
           </div>
 
           <div className="panel-section">
-            <h3>Test Controls</h3>
+            <h3>Controls</h3>
+            <button 
+              className="export-button" 
+              onClick={exportData}
+              disabled={connectionStatus !== 'connected'}
+            >
+              📥 Export Data
+            </button>
             <button 
               className="test-button" 
               onClick={sendTestMessage}
               disabled={connectionStatus !== 'connected'}
             >
-              Send Test Message
+              🔔 Send Test Message
             </button>
+          </div>
+
+          {/* Alert History */}
+          <div className="panel-section alert-history-section">
+            <AlertHistory />
           </div>
 
           <div className="panel-section">
@@ -255,6 +311,9 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Analytics Panel */}
+      <AnalyticsPanel densityData={densityData} metroData={metroData} />
     </div>
   );
 }
