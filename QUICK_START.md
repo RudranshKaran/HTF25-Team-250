@@ -33,34 +33,68 @@ npm run dev
 
 ---
 
-**All 4 Phases Complete!** Full analytics & predictive insights! 🚀
+**All 5 Phases Complete!** Mission Control System Operational! 🚀
 
 ---
 
-## 🎯 Phase 4 Features (LATEST!)
+## 🎯 Phase 5 Features (LATEST!) 🚀 MISSION CONTROL
 
-### 🚇 Metro Flow Simulation
-- Real-time passenger entry/exit rates
-- Rush hour patterns (8-10 AM, 5-8 PM)
-- Updates every 60 seconds
+### ⚙️ Control Panel
+- **Click** ⚙️ Settings button (top-right)
+- **Tabs**: Controls | Thresholds | Display | Sound
+- **Adjust** alert thresholds in real-time
+- **Toggle** display elements (heatmap, hotspots, badges)
+- **Configure** sound notifications
+- **View** session statistics
 
-### 🔥 Crowd Density Heatmap
-- 10x10 grid over stadium area
-- Color-coded: Green → Yellow → Orange → Red
-- Updates every 30 seconds
+### ⚡ Quick Actions Toolbar
+- **Click** ⚡ button (bottom-left) for instant actions:
+  - ⏯️ Pause/Resume
+  - 🎬 Demo Mode
+  - 💾 Export
+  - 🔊 Sound Toggle
+  - 🔄 Refresh
+  - 🗑️ Clear History
 
-### ⚠️ Intelligent Alerts
-- WARNING: Density > 150 or Metro exit > 80/min
-- CRITICAL: Density > 200 or combined risks
-- Top-right corner notifications
+### ⌨️ Keyboard Shortcuts
+- `Space` - Pause/Resume
+- `D` - Toggle Demo Mode
+- `E` - Export Data
+- `M` - Toggle Sound
+- `R` - Refresh
+- `Shift+?` - Show all shortcuts
+
+### 🎵 Sound Notifications
+- **Critical Alerts**: 3 urgent beeps
+- **Warning Alerts**: 2 medium beeps
+- **Success**: Ascending tone
+- **Mute**: Press `M` key
+
+### 📊 Performance Dashboard
+- **Location**: Bottom-right corner
+- **Metrics**: FPS, Latency, Memory, Messages, Status
+- **Expand** to see all details
+
+### 💬 Toast Notifications
+- Auto-appear for all actions
+- Color-coded by type
+- Dismissible
+- Top-right corner
+
+### 🎬 Demo Mode
+- **Activate**: Press `D` or Quick Actions
+- **Effect**: 2x speed, guaranteed alerts
+- **Perfect** for presentations
 
 ### 📊 What You'll See
 1. **Map**: Heatmap overlay showing crowd density
 2. **Right Panel**: Weather + Metro Flow widgets + Alert History
 3. **Bottom Panel**: Analytics with charts & predictions
-4. **Status**: Max density with trend arrows (↗️↘️→)
-5. **Alerts**: Real-time notifications with recommendations
-6. **Export**: Download complete system data as JSON
+4. **Top-Right**: Settings button + Toast notifications
+5. **Bottom-Right**: Performance Dashboard
+6. **Bottom-Left**: Quick Actions toolbar
+7. **Alerts**: Real-time audio + visual notifications
+8. **Status**: Max density with trend arrows (↗️↘️→)
 
 ---
 

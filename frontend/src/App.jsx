@@ -10,6 +10,12 @@ import MetroFlowWidget from './components/MetroFlowWidget';
 import AlertBanner from './components/AlertBanner';
 import AnalyticsPanel from './components/AnalyticsPanel';
 import AlertHistory from './components/AlertHistory';
+import NotificationCenter, { notify } from './components/NotificationCenter';
+import ControlPanel from './components/ControlPanel';
+import PerformanceDashboard from './components/PerformanceDashboard';
+import QuickActions from './components/QuickActions';
+import audioManager from './utils/audioManager';
+import keyboardManager from './utils/keyboardShortcuts';
 import './App.css';
 
 function App() {
@@ -27,6 +33,10 @@ function App() {
   const [metroData, setMetroData] = useState(null);
   const [densityData, setDensityData] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  
+  // Phase 5: Performance & Settings
+  const [messageCount, setMessageCount] = useState(0);
+  const [settings, setSettings] = useState(null);
 
   // WebSocket connection logic
   const connectWebSocket = useCallback(() => {
@@ -47,6 +57,7 @@ function App() {
         
         setMessages(prev => [...prev, data].slice(-10)); // Keep last 10 messages
         setLastUpdate(new Date().toLocaleTimeString());
+        setMessageCount(prev => prev + 1);
 
         // Handle different message types
         switch(data.type) {
@@ -84,6 +95,15 @@ function App() {
             // New alert received
             console.log(`⚠️ ${data.level.toUpperCase()} ALERT: ${data.message}`);
             setAlerts(prev => [data, ...prev].slice(0, 5)); // Keep last 5 alerts
+            
+            // Play alert sound based on level
+            if (data.level === 'critical') {
+              audioManager.playCriticalAlert();
+              notify.error(`🚨 ${data.message}`, 8000);
+            } else if (data.level === 'warning') {
+              audioManager.playWarningAlert();
+              notify.warning(`⚠️ ${data.message}`, 6000);
+            }
             break;
           default:
             console.log('Unknown message type:', data.type);
@@ -124,6 +144,97 @@ function App() {
     const cleanup = connectWebSocket();
     return cleanup;
   }, [connectWebSocket]);
+
+  // Fetch settings
+  const fetchSettings = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/settings');
+      const data = await response.json();
+      setSettings(data);
+      
+      // Update audio manager volume
+      if (data.notifications) {
+        audioManager.setVolume(data.notifications.sound_volume);
+        audioManager.setEnabled(data.notifications.sound_enabled);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    keyboardManager.init();
+    
+    // Register shortcuts
+    keyboardManager.register('k', 'ctrl', () => {
+      // Open control panel (handled by ControlPanel component)
+      notify.info('Press ⚙️ Settings button to open Control Panel');
+    }, 'Open Control Panel');
+    
+    keyboardManager.register(' ', '', async () => {
+      // Pause/Resume
+      try {
+        const response = await fetch('http://localhost:8000/api/control/toggle', { method: 'POST' });
+        const data = await response.json();
+        notify.info(data.paused ? '⏸️ Paused' : '▶️ Resumed');
+        await fetchSettings();
+      } catch (error) {
+        console.error('Failed to toggle pause:', error);
+      }
+    }, 'Pause/Resume');
+    
+    keyboardManager.register('d', '', async () => {
+      // Demo mode
+      try {
+        const response = await fetch('http://localhost:8000/api/control/demo-mode', { method: 'POST' });
+        const data = await response.json();
+        notify.warning(data.demo_mode ? '🎬 Demo Mode ON' : '🎬 Demo Mode OFF');
+        await fetchSettings();
+      } catch (error) {
+        console.error('Failed to toggle demo mode:', error);
+      }
+    }, 'Toggle Demo Mode');
+    
+    keyboardManager.register('e', '', exportData, 'Export Data');
+    
+    keyboardManager.register('m', '', () => {
+      const enabled = audioManager.isEnabled();
+      audioManager.setEnabled(!enabled);
+      notify.info(`Sound ${!enabled ? 'enabled 🔊' : 'muted 🔇'}`);
+    }, 'Toggle Sound');
+    
+    keyboardManager.register('r', '', () => {
+      notify.info('🔄 Refreshing data...');
+      fetchSettings();
+    }, 'Refresh Data');
+    
+    keyboardManager.register('?', 'shift', () => {
+      const shortcuts = keyboardManager.getAllShortcuts();
+      let message = '⌨️ Keyboard Shortcuts:\n';
+      shortcuts.forEach(s => {
+        const mod = s.modifier ? `${s.modifier}+` : '';
+        message += `\n${mod}${s.key.toUpperCase()}: ${s.description}`;
+      });
+      console.log(message);
+      notify.info('Keyboard shortcuts logged to console', 5000);
+    }, 'Show Shortcuts');
+    
+    return () => {
+      keyboardManager.destroy();
+    };
+  }, [fetchSettings]);
+
+  // Handle quick action callbacks
+  const handleQuickAction = useCallback((action) => {
+    if (action === 'refresh') {
+      fetchSettings();
+    }
+  }, [fetchSettings]);
 
   // Send test message to backend
   const sendTestMessage = () => {
@@ -180,6 +291,21 @@ function App() {
 
   return (
     <div className="App">
+      {/* Notification Center */}
+      <NotificationCenter />
+      
+      {/* Control Panel */}
+      <ControlPanel onSettingsUpdate={fetchSettings} />
+      
+      {/* Performance Dashboard */}
+      <PerformanceDashboard 
+        connectionStatus={connectionStatus} 
+        messagesReceived={messageCount}
+      />
+      
+      {/* Quick Actions */}
+      <QuickActions onAction={handleQuickAction} />
+      
       {/* Header */}
       <header className="app-header">
         <div className="header-left">

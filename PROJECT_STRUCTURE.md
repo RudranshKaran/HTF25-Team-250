@@ -3,13 +3,14 @@
 ## Root Directory
 ```
 HTF25-Team-250/
-├── backend/                    # Python FastAPI backend
-├── frontend/                   # React + Vite frontend
-├── README.md                   # Main documentation
-├── QUICK_START.md             # Quick setup commands
-├── FINAL_IMPROVEMENTS_SUMMARY.md  # Complete feature summary
-├── PROJECT_STRUCTURE.md       # This file
-└── fork.jpeg                  # Project image
+├── backend/                         # Python FastAPI backend
+├── frontend/                        # React + Vite frontend
+├── README.md                        # Main documentation & entry point
+├── QUICK_START.md                   # Quick setup commands
+├── MISSION_CONTROL_COMPLETE.md      # Ultimate comprehensive guide
+├── PHASE5_COMPLETE.md               # Phase 5: Mission Control details
+├── PROJECT_STRUCTURE.md             # This file
+└── CLEANUP_PHASE5.md                # Phase 5 cleanup record
 ```
 
 ---
@@ -47,6 +48,20 @@ backend/
 - Global `_crowd_state` for phase persistence
 - Formatting utilities
 
+#### `history_manager.py` (Phase 4)
+- `HistoryManager` class: 30-minute rolling history
+- Trend analysis (increasing/decreasing/stable)
+- Predictive alert indicators
+- Chart data formatting
+
+#### `config_manager.py` (Phase 5)
+- `ConfigManager` class: System settings & configuration
+- Dynamic threshold adjustment
+- Display toggles (heatmap, hotspots, badges)
+- Sound settings management
+- Session statistics tracking
+- Demo mode control
+
 ---
 
 ## Frontend Structure
@@ -54,22 +69,38 @@ backend/
 frontend/
 ├── src/
 │   ├── main.jsx              # React entry point
-│   ├── index.css             # Global styles
-│   ├── App.jsx               # Main application component
+│   ├── index.css             # Global styles with theme variables
+│   ├── App.jsx               # Main application component (Phase 5 integrated)
 │   ├── App.css               # App styles
-│   └── components/
-│       ├── MapComponent.jsx  # Leaflet map with heatmap
-│       ├── MapComponent.css
-│       ├── WeatherWidget.jsx # Weather display
-│       ├── WeatherWidget.css
-│       ├── MetroFlowWidget.jsx  # Metro flow display
-│       ├── MetroFlowWidget.css
-│       ├── AlertBanner.jsx   # Alert notifications
-│       └── AlertBanner.css
+│   ├── components/           # React Components
+│   │   ├── MapComponent.jsx            # Leaflet map with heatmap
+│   │   ├── MapComponent.css
+│   │   ├── WeatherWidget.jsx           # Weather display
+│   │   ├── WeatherWidget.css
+│   │   ├── MetroFlowWidget.jsx         # Metro flow display
+│   │   ├── MetroFlowWidget.css
+│   │   ├── AlertBanner.jsx             # Alert notifications
+│   │   ├── AlertBanner.css
+│   │   ├── AnalyticsPanel.jsx          # Phase 4: Charts & trends
+│   │   ├── AnalyticsPanel.css
+│   │   ├── AlertHistory.jsx            # Phase 4: Alert log
+│   │   ├── AlertHistory.css
+│   │   ├── ControlPanel.jsx            # Phase 5: Settings interface
+│   │   ├── ControlPanel.css
+│   │   ├── PerformanceDashboard.jsx    # Phase 5: Performance metrics
+│   │   ├── PerformanceDashboard.css
+│   │   ├── QuickActions.jsx            # Phase 5: Quick action toolbar
+│   │   ├── QuickActions.css
+│   │   ├── NotificationCenter.jsx      # Phase 5: Toast notifications
+│   │   └── NotificationCenter.css
+│   └── utils/                # Utility Managers (Phase 5)
+│       ├── audioManager.js             # Sound notification system
+│       ├── keyboardShortcuts.js        # Keyboard shortcut manager
+│       └── themeManager.js             # Theme management
 ├── public/
 │   └── vite.svg
 ├── index.html                # HTML template
-├── package.json              # Node dependencies
+├── package.json              # Node dependencies (leaflet, react-leaflet, leaflet.heat, recharts)
 ├── package-lock.json
 ├── vite.config.js           # Vite configuration
 └── eslint.config.js         # ESLint configuration
@@ -115,15 +146,56 @@ frontend/
 - Dismissible alerts
 - Alert history
 
+**AnalyticsPanel.jsx** (Phase 4, 200+ lines)
+- Historical data charts (Recharts)
+- Density & metro trend visualizations
+- Predictive indicators
+- Expandable panel
+
+**AlertHistory.jsx** (Phase 4, 120 lines)
+- Alert log with timestamps
+- Filterable by level
+- Expandable panel
+
+**ControlPanel.jsx** (Phase 5, 400+ lines)
+- 4-tab settings interface (Controls, Thresholds, Display, Sound)
+- Dynamic threshold sliders
+- Display toggles
+- Sound configuration
+- Session statistics
+- Pause/Resume controls
+- Demo mode toggle
+
+**PerformanceDashboard.jsx** (Phase 5, 100 lines)
+- Real-time FPS monitoring
+- WebSocket latency tracking
+- Memory usage (if available)
+- Message count
+- Minimizable widget
+
+**QuickActions.jsx** (Phase 5, 150 lines)
+- 6 instant action buttons
+- Animated slide-up menu
+- Mobile-responsive (icon-only)
+- Sound/export/pause controls
+
+**NotificationCenter.jsx** (Phase 5, 80 lines)
+- Toast notification system
+- 4 types: success/error/warning/info
+- Auto-dismiss & manual close
+- Stackable notifications
+
 ---
 
 ## Documentation Files
 
-### Essential Docs (Keep)
-- **`README.md`**: Complete project documentation
-- **`QUICK_START.md`**: Fast setup reference
-- **`FINAL_IMPROVEMENTS_SUMMARY.md`**: All features & improvements
-- **`PROJECT_STRUCTURE.md`**: This file
+### Essential Docs (Current)
+- **`README.md`**: Main project documentation & entry point
+- **`QUICK_START.md`**: Fast setup commands
+- **`MISSION_CONTROL_COMPLETE.md`**: Ultimate comprehensive reference
+- **`PHASE5_COMPLETE.md`**: Phase 5 Mission Control details
+- **`PROJECT_STRUCTURE.md`**: This file (project organization)
+- **`CLEANUP_PHASE5.md`**: Phase 5 cleanup record
 
 ---
 

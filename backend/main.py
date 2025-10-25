@@ -17,6 +17,7 @@ from simulations import (
     format_metro_summary, format_density_summary
 )
 from history_manager import history_manager
+from config_manager import config_manager
 
 # Load environment variables
 load_dotenv()
@@ -162,10 +163,11 @@ async def metro_simulation_task():
     print("Metro simulation task started")
     
     while True:
-        if manager.active_connections:
+        if manager.active_connections and not config_manager.simulations_paused:
             try:
                 metro_data = simulate_metro_flow()
                 latest_metro_data = metro_data
+                config_manager.increment_message_count()
                 
                 # Add to history
                 history_manager.add_metro_data(metro_data)
@@ -198,10 +200,11 @@ async def density_simulation_task():
     print("Crowd density simulation task started")
     
     while True:
-        if manager.active_connections:
+        if manager.active_connections and not config_manager.simulations_paused:
             try:
                 density_data = simulate_crowd_density()
                 latest_density_data = density_data
+                config_manager.increment_message_count()
                 
                 # Add to history
                 history_manager.add_density_data(density_data)
@@ -218,6 +221,7 @@ async def density_simulation_task():
                     alerts = check_alerts(density_data, latest_metro_data)
                     for alert in alerts:
                         history_manager.add_alert(alert)  # Add to history
+                        config_manager.increment_alert_count()  # Track stats
                         await manager.broadcast(alert)
                         print(f"⚠️  Alert: {alert['level'].upper()} - {alert['message']}")
                         
@@ -282,6 +286,65 @@ async def export_data():
         },
         "history": history
     }
+
+@app.get("/api/settings")
+async def get_settings():
+    """Get current system settings"""
+    return config_manager.get_settings()
+
+@app.post("/api/settings/thresholds")
+async def update_thresholds(warning: int = None, critical: int = None, metro: int = None):
+    """Update alert thresholds"""
+    config_manager.update_thresholds(warning, critical, metro)
+    return {"status": "success", "thresholds": config_manager.get_settings()["thresholds"]}
+
+@app.post("/api/control/pause")
+async def pause_simulations():
+    """Pause all simulations"""
+    config_manager.pause_simulations()
+    return {"status": "paused", "paused": True}
+
+@app.post("/api/control/resume")
+async def resume_simulations():
+    """Resume all simulations"""
+    config_manager.resume_simulations()
+    return {"status": "resumed", "paused": False}
+
+@app.post("/api/control/toggle")
+async def toggle_simulations():
+    """Toggle pause/resume"""
+    paused = config_manager.toggle_simulations()
+    return {"status": "toggled", "paused": paused}
+
+@app.post("/api/control/reset-history")
+async def reset_history():
+    """Clear all history data"""
+    history_manager.clear_history()
+    return {"status": "history_cleared"}
+
+@app.post("/api/control/reset-stats")
+async def reset_stats():
+    """Reset statistics"""
+    config_manager.reset_stats()
+    return {"status": "stats_reset"}
+
+@app.post("/api/settings/display")
+async def update_display(heatmap: bool = None, hotspots: bool = None, badge: bool = None):
+    """Update display settings"""
+    config_manager.update_display_settings(heatmap, hotspots, badge)
+    return {"status": "success", "display": config_manager.get_settings()["display"]}
+
+@app.post("/api/settings/sound")
+async def update_sound(enabled: bool = None, volume: float = None, critical: bool = None, warning: bool = None):
+    """Update sound settings"""
+    config_manager.update_sound_settings(enabled, volume, critical, warning)
+    return {"status": "success", "notifications": config_manager.get_settings()["notifications"]}
+
+@app.post("/api/control/demo-mode")
+async def toggle_demo_mode():
+    """Toggle demo mode"""
+    demo_mode = config_manager.toggle_demo_mode()
+    return {"status": "toggled", "demo_mode": demo_mode}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

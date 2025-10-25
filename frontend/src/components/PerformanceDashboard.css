@@ -1,0 +1,147 @@
+.performance-dashboard {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.performance-dashboard:hover {
+  border-color: #667eea;
+}
+
+.performance-dashboard.minimized {
+  min-width: auto;
+}
+
+.perf-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.perf-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.perf-icon {
+  font-size: 16px;
+}
+
+.perf-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.perf-toggle {
+  font-size: 12px;
+  color: #888;
+}
+
+.perf-content {
+  padding: 0 12px 12px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.perf-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #222;
+}
+
+.perf-metric:last-of-type {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+}
+
+.perf-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #222;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-status 2s infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .performance-dashboard {
+    bottom: 10px;
+    right: 10px;
+    min-width: 160px;
+  }
+
+  .perf-header {
+    padding: 8px 10px;
+  }
+
+  .perf-title {
+    font-size: 12px;
+  }
+
+  .metric-label,
+  .status-text {
+    font-size: 11px;
+  }
+
+  .metric-value {
+    font-size: 13px;
+  }
+}
+
