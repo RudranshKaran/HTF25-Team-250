@@ -11,6 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
+from api_handlers import fetch_bmtc_bus_data, fetch_weather_data, format_bus_summary, format_weather_summary
 
 # Load environment variables
 load_dotenv()
@@ -94,6 +95,54 @@ async def test_broadcast_task():
         
         await asyncio.sleep(10)  # Send every 10 seconds
 
+
+# Background task for BMTC bus GPS data
+async def bmtc_data_task():
+    """Fetch and broadcast BMTC bus GPS data every 30 seconds"""
+    await asyncio.sleep(5)  # Initial delay
+    
+    print("BMTC data task started")
+    
+    while True:
+        if manager.active_connections:
+            try:
+                bus_data = await fetch_bmtc_bus_data()
+                
+                if bus_data:
+                    await manager.broadcast(bus_data)
+                    print(f"📍 BMTC broadcast: {format_bus_summary(bus_data)}")
+                else:
+                    print("⚠️ BMTC: No data received")
+                    
+            except Exception as e:
+                print(f"❌ BMTC task error: {e}")
+        
+        await asyncio.sleep(30)  # Fetch every 30 seconds
+
+
+# Background task for weather data
+async def weather_data_task():
+    """Fetch and broadcast weather data every 5 minutes"""
+    await asyncio.sleep(3)  # Initial delay
+    
+    print("Weather data task started")
+    
+    while True:
+        if manager.active_connections:
+            try:
+                weather_data = await fetch_weather_data()
+                
+                if weather_data:
+                    await manager.broadcast(weather_data)
+                    print(f"🌦️ Weather broadcast: {format_weather_summary(weather_data)}")
+                else:
+                    print("⚠️ Weather: No data received")
+                    
+            except Exception as e:
+                print(f"❌ Weather task error: {e}")
+        
+        await asyncio.sleep(300)  # Fetch every 5 minutes (300 seconds)
+
 # Routes
 @app.get("/")
 async def root():
@@ -147,11 +196,24 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks when the application starts"""
-    print("Starting Crowd Safety Intelligence System backend...")
-    print("WebSocket endpoint available at: ws://localhost:8000/ws")
+    print("=" * 60)
+    print("🚨 Crowd Safety Intelligence System - Backend Starting...")
+    print("=" * 60)
+    print("WebSocket endpoint: ws://localhost:8000/ws")
+    print("Health check: http://localhost:8000")
+    print("Status API: http://localhost:8000/api/status")
+    print("=" * 60)
     
-    # Start the test broadcast task
+    # Start all background tasks
     asyncio.create_task(test_broadcast_task())
+    asyncio.create_task(bmtc_data_task())
+    asyncio.create_task(weather_data_task())
+    
+    print("✅ Background tasks started:")
+    print("   - Test messages (every 10s)")
+    print("   - BMTC bus GPS (every 30s)")
+    print("   - Weather data (every 5min)")
+    print("=" * 60)
 
 if __name__ == "__main__":
     import uvicorn

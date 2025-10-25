@@ -131,3 +131,28 @@
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* Custom Bus Marker */
+.custom-bus-icon {
+  background: none;
+  border: none;
+}
+
+.bus-marker {
+  font-size: 24px;
+  text-align: center;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  animation: busFloat 2s ease-in-out infinite;
+}
+
+@keyframes busFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.bus-update-time {
+  font-size: 0.75rem;
+  color: #8b9dc3;
+  margin-top: 0.3rem;
+}
+

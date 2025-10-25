@@ -106,12 +106,18 @@
 
 /* Side Panel */
 .side-panel {
-  width: 350px;
+  width: 380px;
   background: #0f1628;
   border-left: 2px solid #2a3f5f;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+}
+
+/* Weather Section */
+.weather-section {
+  padding: 1rem;
+  border-bottom: none;
 }
 
 .panel-section {
@@ -164,6 +170,11 @@
 
 .status-item .value.connecting {
   color: #ffa500;
+}
+
+.status-item .value.bus-count {
+  color: #ffd700;
+  font-weight: 700;
 }
 
 /* Test Button */

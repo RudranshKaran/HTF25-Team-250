@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import MapComponent from './components/MapComponent';
+import WeatherWidget from './components/WeatherWidget';
 import './App.css';
 
 function App() {
@@ -12,6 +13,11 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [wsClient, setWsClient] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  
+  // Phase 2: New data streams
+  const [busData, setBusData] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [busCount, setBusCount] = useState(0);
 
   // WebSocket connection logic
   const connectWebSocket = useCallback(() => {
@@ -43,6 +49,17 @@ function App() {
             break;
           case 'echo':
             console.log('Echo received:', data.received);
+            break;
+          case 'gps_update':
+            // Update bus data
+            console.log(`🚌 Received ${data.count} buses`);
+            setBusData(data);
+            setBusCount(data.count || 0);
+            break;
+          case 'weather_update':
+            // Update weather data
+            console.log(`🌦️ Weather: ${data.temperature}°C, ${data.description}`);
+            setWeatherData(data);
             break;
           default:
             console.log('Unknown message type:', data.type);
@@ -126,11 +143,15 @@ function App() {
       <div className="main-content">
         {/* Map component */}
         <div className="map-container">
-          <MapComponent />
+          <MapComponent busData={busData} />
         </div>
 
-        {/* Side panel for testing (Phase 1) */}
+        {/* Side panel */}
         <div className="side-panel">
+          {/* Weather Widget */}
+          <div className="panel-section weather-section">
+            <WeatherWidget weatherData={weatherData} />
+          </div>
           <div className="panel-section">
             <h3>System Status</h3>
             <div className="status-grid">
@@ -143,6 +164,16 @@ function App() {
               <div className="status-item">
                 <span className="label">Messages:</span>
                 <span className="value">{messages.length}</span>
+              </div>
+              <div className="status-item">
+                <span className="label">Active Buses:</span>
+                <span className="value bus-count">{busCount}</span>
+              </div>
+              <div className="status-item">
+                <span className="label">Weather:</span>
+                <span className="value">
+                  {weatherData ? `${weatherData.temperature}°C` : 'Loading...'}
+                </span>
               </div>
             </div>
           </div>

@@ -1,9 +1,10 @@
 /**
  * MapComponent - Leaflet map centered on Bengaluru
- * Uses Mapbox satellite tiles for base layer
+ * Displays static locations and dynamic BMTC bus markers
  */
 
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { useEffect, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './MapComponent.css';
@@ -16,12 +17,36 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// Custom bus icon
+const busIcon = new L.DivIcon({
+  html: '<div class="bus-marker">🚌</div>',
+  className: 'custom-bus-icon',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+});
+
 // Bengaluru coordinates (M. Chinnaswamy Stadium area)
 const BENGALURU_CENTER = [12.9791, 77.5993];
 const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
 const MG_ROAD_METRO = [12.9756, 77.6057];
 
-function MapComponent() {
+function MapComponent({ busData }) {
+  const [buses, setBuses] = useState([]);
+
+  // Update buses when new data arrives
+  useEffect(() => {
+    if (busData && busData.buses) {
+      // Filter out invalid coordinates
+      const validBuses = busData.buses.filter(
+        bus => bus.lat && bus.lon && 
+               bus.lat >= -90 && bus.lat <= 90 && 
+               bus.lon >= -180 && bus.lon <= 180 &&
+               bus.lat !== 0 && bus.lon !== 0
+      );
+      setBuses(validBuses);
+    }
+  }, [busData]);
+
   return (
     <div className="map-wrapper">
       <MapContainer
@@ -98,6 +123,27 @@ function MapComponent() {
             </div>
           </Popup>
         </Circle>
+
+        {/* Dynamic BMTC Bus Markers */}
+        {buses.map((bus, index) => (
+          <Marker
+            key={`bus-${bus.id}-${index}`}
+            position={[bus.lat, bus.lon]}
+            icon={busIcon}
+          >
+            <Popup>
+              <div className="custom-popup">
+                <h3>🚌 BMTC Bus</h3>
+                <p><strong>Route:</strong> {bus.route}</p>
+                <p><strong>Speed:</strong> {bus.speed} km/h</p>
+                <p><strong>Location:</strong> {bus.lat.toFixed(4)}, {bus.lon.toFixed(4)}</p>
+                <p className="bus-update-time">
+                  Updated: {new Date(bus.timestamp).toLocaleTimeString()}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       {/* Map Legend */}
@@ -114,6 +160,10 @@ function MapComponent() {
         <div className="legend-item">
           <span className="legend-icon">📍</span>
           <span>Key Locations</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🚌</span>
+          <span>BMTC Buses ({buses.length})</span>
         </div>
       </div>
 
