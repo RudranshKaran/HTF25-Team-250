@@ -10,9 +10,9 @@ import {
 } from 'recharts';
 import './AnalyticsPanel.css';
 
-function AnalyticsPanel({ densityData, metroData }) {
+function AnalyticsPanel({ densityData, metroData, embedded = false }) {
   const [chartData, setChartData] = useState({ density_chart: [], metro_chart: [] });
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(embedded ? true : false);
 
   // Fetch chart data from backend
   useEffect(() => {
@@ -47,14 +47,15 @@ function AnalyticsPanel({ densityData, metroData }) {
   const getTrendColor = (trend) => {
     switch(trend) {
       case 'increasing': return '#ff6b6b';
-      case 'decreasing': return '4facfe';
+      case 'decreasing': return '#4facfe';
       case 'stable': return '#00ff88';
       default: return '#8b9dc3';
     }
   };
 
   return (
-    <div className={`analytics-panel ${isExpanded ? 'expanded' : 'collapsed'}`}>
+    <div className={`analytics-panel ${embedded ? 'embedded' : isExpanded ? 'expanded' : 'collapsed'}`}>
+      {!embedded && (
       <div className="analytics-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="analytics-title">
           📊 Analytics & Trends
@@ -63,8 +64,9 @@ function AnalyticsPanel({ densityData, metroData }) {
           {isExpanded ? '▼' : '▲'}
         </div>
       </div>
+      )}
 
-      {isExpanded && (
+      {(isExpanded || embedded) && (
         <div className="analytics-content">
           {/* Crowd Density Chart */}
           <div className="chart-section">

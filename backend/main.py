@@ -11,13 +11,16 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from api_handlers import fetch_bmtc_bus_data, fetch_weather_data, format_bus_summary, format_weather_summary
-from simulations import (
-    simulate_metro_flow, simulate_crowd_density, check_alerts,
-    format_metro_summary, format_density_summary
+
+# Import from restructured app
+from app.services import (
+    fetch_bmtc_bus_data, fetch_weather_data, 
+    format_bus_summary, format_weather_summary,
+    simulate_metro_flow, simulate_crowd_density, 
+    check_alerts, format_metro_summary, format_density_summary,
+    history_manager
 )
-from history_manager import history_manager
-from config_manager import config_manager
+from app.config import config_manager
 
 # Load environment variables
 load_dotenv()
@@ -133,7 +136,7 @@ async def bmtc_data_task():
 # Background task for weather data
 async def weather_data_task():
     """Fetch and broadcast weather data every 5 minutes"""
-    await asyncio.sleep(3)  # Initial delay
+    await asyncio.sleep(1)  # Minimal initial delay for immediate weather display
     
     print("Weather data task started")
     
@@ -142,11 +145,12 @@ async def weather_data_task():
             try:
                 weather_data = await fetch_weather_data()
                 
+                # weather_data should always return something (simulated fallback)
                 if weather_data:
                     await manager.broadcast(weather_data)
                     print(f"🌦️ Weather broadcast: {format_weather_summary(weather_data)}")
                 else:
-                    print("⚠️ Weather: No data received")
+                    print("⚠️ Weather: No data received (unexpected)")
                     
             except Exception as e:
                 print(f"❌ Weather task error: {e}")

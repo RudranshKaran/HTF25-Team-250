@@ -1,0 +1,116 @@
+/* ModeToggle Styles */
+
+.mode-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.mode-toggle-track {
+  width: 50px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.mode-toggle.live .mode-toggle-track {
+  background: linear-gradient(90deg, #ff4444 0%, #ff6666 100%);
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+}
+
+.mode-toggle.demo .mode-toggle-track {
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+
+.mode-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle.live .mode-toggle-thumb {
+  transform: translateX(2px);
+  animation: live-pulse 2s infinite;
+}
+
+.mode-toggle.demo .mode-toggle-thumb {
+  transform: translateX(24px);
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 68, 68, 0);
+  }
+}
+
+.mode-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.mode-toggle.live .mode-label {
+  color: #ff6666;
+}
+
+.mode-toggle.demo .mode-label {
+  color: #00f2fe;
+}
+
+.mode-description {
+  font-size: 0.75rem;
+  color: #8b9dc3;
+  text-align: center;
+  max-width: 200px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mode-toggle {
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .mode-label {
+    font-size: 0.75rem;
+  }
+  
+  .mode-description {
+    display: none;
+  }
+}

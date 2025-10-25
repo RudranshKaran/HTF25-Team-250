@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './PerformanceDashboard.css';
 
-const PerformanceDashboard = ({ connectionStatus, messagesReceived, fps }) => {
-  const [isMinimized, setIsMinimized] = useState(true);
+const PerformanceDashboard = ({ connectionStatus, messagesReceived, fps, embedded = false }) => {
+  const [isMinimized, setIsMinimized] = useState(embedded ? false : true);
   const [performance, setPerformance] = useState({
     fps: 0,
     memory: 0,
@@ -52,14 +52,14 @@ const PerformanceDashboard = ({ connectionStatus, messagesReceived, fps }) => {
   };
 
   return (
-    <div className={`performance-dashboard ${isMinimized ? 'minimized' : ''}`}>
-      <div className="perf-header" onClick={() => setIsMinimized(!isMinimized)}>
+    <div className={`performance-dashboard ${isMinimized ? 'minimized' : ''} ${embedded ? 'embedded' : ''}`}>
+      <div className="perf-header" onClick={() => !embedded && setIsMinimized(!isMinimized)} role="button">
         <span className="perf-icon">📊</span>
         <span className="perf-title">Performance</span>
-        <span className="perf-toggle">{isMinimized ? '▲' : '▼'}</span>
+        {!embedded && <span className="perf-toggle">{isMinimized ? '▲' : '▼'}</span>}
       </div>
 
-      {!isMinimized && (
+      {(!isMinimized || embedded) && (
         <div className="perf-content">
           <div className="perf-metric">
             <span className="metric-label">FPS</span>

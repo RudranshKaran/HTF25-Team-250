@@ -1,0 +1,171 @@
+/* CrowdRiskIndicator Styles */
+
+.crowd-risk-indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  border: 2px solid;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  min-width: 280px;
+}
+
+.crowd-risk-indicator:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.risk-icon-wrapper {
+  position: relative;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.risk-icon {
+  font-size: 2rem;
+  z-index: 2;
+  position: relative;
+  animation: icon-bounce 0.5s ease;
+}
+
+@keyframes icon-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.risk-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 68, 68, 0.4);
+  animation: risk-pulse-animation 2s infinite;
+}
+
+@keyframes risk-pulse-animation {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.risk-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.risk-label {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.risk-description {
+  font-size: 0.8rem;
+  color: #8b9dc3;
+}
+
+.risk-density {
+  font-size: 0.75rem;
+  color: #ffffff;
+  margin-top: 0.25rem;
+}
+
+.risk-density span {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Risk level specific animations */
+.crowd-risk-indicator.risk-high {
+  animation: high-risk-shake 2s infinite;
+}
+
+@keyframes high-risk-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px);
+  }
+}
+
+.crowd-risk-indicator.risk-moderate {
+  animation: moderate-risk-glow 3s infinite;
+}
+
+@keyframes moderate-risk-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 165, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.6);
+  }
+}
+
+.crowd-risk-indicator.risk-safe {
+  animation: safe-glow 5s infinite;
+}
+
+@keyframes safe-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 136, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .crowd-risk-indicator {
+    min-width: auto;
+    padding: 0.6rem 1rem;
+  }
+
+  .risk-icon {
+    font-size: 1.5rem;
+  }
+
+  .risk-icon-wrapper {
+    width: 35px;
+    height: 35px;
+  }
+
+  .risk-label {
+    font-size: 0.85rem;
+  }
+
+  .risk-description {
+    font-size: 0.7rem;
+  }
+
+  .risk-density {
+    font-size: 0.7rem;
+  }
+}

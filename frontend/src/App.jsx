@@ -1,6 +1,7 @@
 /**
  * Crowd Safety Intelligence System - Main Application Component
  * Mission Control Dashboard for Real-time Crowd Safety Monitoring
+ * Enhanced Version 2.0
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,12 +9,13 @@ import MapComponent from './components/MapComponent';
 import WeatherWidget from './components/WeatherWidget';
 import MetroFlowWidget from './components/MetroFlowWidget';
 import AlertBanner from './components/AlertBanner';
-import AnalyticsPanel from './components/AnalyticsPanel';
 import AlertHistory from './components/AlertHistory';
 import NotificationCenter, { notify } from './components/NotificationCenter';
 import ControlPanel from './components/ControlPanel';
-import PerformanceDashboard from './components/PerformanceDashboard';
 import QuickActions from './components/QuickActions';
+import ModeToggle from './components/ModeToggle';
+import CrowdRiskIndicator from './components/CrowdRiskIndicator';
+import InsightsDock from './components/InsightsDock';
 import audioManager from './utils/audioManager';
 import keyboardManager from './utils/keyboardShortcuts';
 import './App.css';
@@ -48,6 +50,11 @@ function App() {
     ws.onopen = () => {
       console.log('✅ WebSocket connected successfully');
       setConnectionStatus('connected');
+      
+      // Log to system logs
+      if (window.addSystemLog) {
+        window.addSystemLog('WebSocket connected successfully', 'success');
+      }
     };
 
     ws.onmessage = (event) => {
@@ -122,9 +129,17 @@ function App() {
       console.log('WebSocket disconnected');
       setConnectionStatus('disconnected');
       
+      // Log to system logs
+      if (window.addSystemLog) {
+        window.addSystemLog('WebSocket disconnected', 'error');
+      }
+      
       // Attempt to reconnect after 3 seconds
       setTimeout(() => {
         console.log('Attempting to reconnect...');
+        if (window.addSystemLog) {
+          window.addSystemLog('Attempting to reconnect...', 'warning');
+        }
         connectWebSocket();
       }, 3000);
     };
@@ -142,6 +157,12 @@ function App() {
   // Connect to WebSocket on component mount
   useEffect(() => {
     const cleanup = connectWebSocket();
+    
+    // Log to system logs
+    if (window.addSystemLog) {
+      window.addSystemLog('Connecting to backend...', 'info');
+    }
+    
     return cleanup;
   }, [connectWebSocket]);
 
@@ -294,14 +315,18 @@ function App() {
       {/* Notification Center */}
       <NotificationCenter />
       
+      {/* Consolidated Insights Dock (Analytics, Logs, Performance) */}
+      <InsightsDock 
+        densityData={densityData}
+        metroData={metroData}
+        connectionStatus={connectionStatus}
+        messagesReceived={messageCount}
+      />
+
       {/* Control Panel */}
       <ControlPanel onSettingsUpdate={fetchSettings} />
       
-      {/* Performance Dashboard */}
-      <PerformanceDashboard 
-        connectionStatus={connectionStatus} 
-        messagesReceived={messageCount}
-      />
+      {/* Legacy floating panels removed in favor of InsightsDock */}
       
       {/* Quick Actions */}
       <QuickActions onAction={handleQuickAction} />
@@ -312,7 +337,14 @@ function App() {
           <h1>🚨 Crowd Safety Intelligence System</h1>
           <p className="subtitle">Mission Control Dashboard - Bengaluru</p>
         </div>
+        <div className="header-center">
+          {/* Crowd Risk Indicator */}
+          <CrowdRiskIndicator densityData={densityData} />
+        </div>
         <div className="header-right">
+          {/* Mode Toggle */}
+          <ModeToggle />
+          
           <div className={`status-indicator ${connectionStatus}`}>
             <span className="status-dot"></span>
             <span className="status-text">
@@ -321,6 +353,7 @@ function App() {
                'DISCONNECTED'}
             </span>
           </div>
+          
           {lastUpdate && (
             <span className="last-update">Last Update: {lastUpdate}</span>
           )}
@@ -438,8 +471,7 @@ function App() {
         </div>
       </div>
 
-      {/* Analytics Panel */}
-      <AnalyticsPanel densityData={densityData} metroData={metroData} />
+      {/* Bottom analytics panel removed in favor of InsightsDock */}
     </div>
   );
 }

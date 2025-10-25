@@ -47,7 +47,7 @@
 /* Map Legend */
 .map-legend {
   position: absolute;
-  bottom: 30px;
+  bottom: 80px; /* Positioned above collapsed analytics panel (50px + 30px margin) */
   right: 20px;
   background: rgba(15, 22, 40, 0.95);
   padding: 1rem;

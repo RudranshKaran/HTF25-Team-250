@@ -1,0 +1,194 @@
+/* SystemLogs Styles */
+
+.system-logs {
+  position: fixed;
+  bottom: 70px; /* Positioned above collapsed analytics panel (50px + 20px margin) */
+  right: 20px;
+  width: 400px;
+  max-height: 250px;
+  background: rgba(15, 22, 40, 0.95);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+/* Embedded mode for use inside InsightsDock */
+.system-logs.embedded {
+  position: static;
+  bottom: auto;
+  right: auto;
+  width: 100%;
+  max-height: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.system-logs.collapsed {
+  max-height: 40px;
+}
+
+.system-logs:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.system-logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(79, 172, 254, 0.1);
+  border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.system-logs.embedded .system-logs-header {
+  background: transparent;
+  border: none;
+  padding: 0 0 0.5rem 0;
+  cursor: default;
+}
+
+.system-logs-header:hover {
+  background: rgba(79, 172, 254, 0.15);
+}
+
+.system-logs-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4facfe;
+  letter-spacing: 0.5px;
+}
+
+.system-logs-toggle {
+  color: #8b9dc3;
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.system-logs-content {
+  padding: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.system-logs.embedded .system-logs-content {
+  padding: 0;
+  max-height: none;
+}
+
+/* Custom scrollbar */
+.system-logs-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.system-logs-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.system-logs-content::-webkit-scrollbar-thumb {
+  background: rgba(79, 172, 254, 0.3);
+  border-radius: 3px;
+}
+
+.system-logs-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 172, 254, 0.5);
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.2s ease;
+  animation: log-slide-in 0.3s ease;
+}
+
+@keyframes log-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.log-icon {
+  font-weight: bold;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.log-entry.log-success .log-icon {
+  color: #00ff88;
+}
+
+.log-entry.log-error .log-icon {
+  color: #ff4444;
+}
+
+.log-entry.log-warning .log-icon {
+  color: #ffa500;
+}
+
+.log-entry.log-info .log-icon {
+  color: #4facfe;
+}
+
+.log-timestamp {
+  color: #8b9dc3;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.log-message {
+  color: #ffffff;
+  flex: 1;
+  word-break: break-word;
+}
+
+.system-logs-empty {
+  text-align: center;
+  color: #8b9dc3;
+  font-size: 0.85rem;
+  padding: 1rem;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .system-logs {
+    width: calc(100% - 40px);
+    right: 20px;
+    left: 20px;
+    max-height: 200px;
+  }
+
+  .log-entry {
+    font-size: 0.7rem;
+  }
+
+  .log-timestamp {
+    display: none;
+  }
+}

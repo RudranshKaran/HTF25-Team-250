@@ -300,11 +300,11 @@ Backend Configuration
 ## 📈 **FUTURE ENHANCEMENTS** (Ideas)
 
 ### Immediate Potential
-- [ ] Light theme toggle button
 - [ ] Configurable alert rules builder
 - [ ] Multiple location support
 - [ ] User authentication & roles
 - [ ] Email/SMS alert forwarding
+- [ ] Enhanced mobile responsiveness
 
 ### Advanced Features
 - [ ] AI/ML integration (TensorFlow.js)

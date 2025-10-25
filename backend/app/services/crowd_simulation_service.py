@@ -1,5 +1,5 @@
 """
-Simulation Functions for Phase 3
+Crowd Simulation Service
 - Metro Flow Simulation
 - Crowd Density Simulation (with gradual accumulation)
 - Alert Logic
@@ -9,16 +9,14 @@ import random
 import math
 from datetime import datetime
 from typing import Dict, List, Tuple
-
-# Bengaluru coordinates
-BENGALURU_CENTER = [12.9716, 77.5946]
-STADIUM_LOCATION = [12.9789, 77.5993]
-METRO_LOCATION = [12.9756, 77.6057]
-
-# Alert thresholds
-DENSITY_THRESHOLD_HIGH = 150
-DENSITY_THRESHOLD_CRITICAL = 200
-METRO_FLOW_THRESHOLD = 80  # passengers/min
+from app.utils.constants import (
+    BENGALURU_CENTER,
+    STADIUM_LOCATION,
+    METRO_LOCATION,
+    DENSITY_THRESHOLD_HIGH,
+    DENSITY_THRESHOLD_CRITICAL,
+    METRO_FLOW_THRESHOLD
+)
 
 # Global state for crowd accumulation (persists between calls)
 _crowd_state = {

@@ -12,6 +12,17 @@
   transition: all 0.3s ease;
 }
 
+/* Embedded mode for InsightsDock */
+.performance-dashboard.embedded {
+  position: static;
+  bottom: auto;
+  right: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-width: 0;
+}
+
 .performance-dashboard:hover {
   border-color: #667eea;
 }
@@ -27,6 +38,11 @@
   padding: 10px 12px;
   cursor: pointer;
   user-select: none;
+}
+
+.performance-dashboard.embedded .perf-header {
+  padding: 0 0 8px 0;
+  cursor: default;
 }
 
 .perf-header:hover {
@@ -52,6 +68,10 @@
 .perf-content {
   padding: 0 12px 12px;
   animation: slideDown 0.3s ease;
+}
+
+.performance-dashboard.embedded .perf-content {
+  padding: 0;
 }
 
 @keyframes slideDown {
