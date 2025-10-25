@@ -1,0 +1,246 @@
+/* Alert Banner Styles */
+
+.alert-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  max-width: 450px;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Header */
+.alert-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 0.8rem 1rem;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.alert-dismiss-all {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.alert-dismiss-all:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Alert List */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+/* Individual Alert */
+.alert-banner {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  animation: alertPop 0.3s ease-out;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes alertPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Alert Levels */
+.alert-banner.warning {
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.95) 0%, rgba(255, 140, 0, 0.95) 100%);
+  border-left: 5px solid #ff8c00;
+  color: #1a1a1a;
+}
+
+.alert-banner.critical {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.95) 0%, rgba(178, 34, 34, 0.95) 100%);
+  border-left: 5px solid #ff0000;
+  color: white;
+  animation: alertPulse 2s ease-in-out infinite;
+}
+
+@keyframes alertPulse {
+  0%, 100% {
+    box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 30px rgba(220, 20, 60, 0.8);
+  }
+}
+
+/* Alert Icon */
+.alert-icon {
+  font-size: 2rem;
+  line-height: 1;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Alert Content */
+.alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert-title {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.alert-level {
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.alert-banner.warning .alert-level {
+  background: rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
+}
+
+.alert-banner.critical .alert-level {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.alert-category {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.alert-zone {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.alert-message {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.alert-recommendation {
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  line-height: 1.4;
+}
+
+.alert-time {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 0.3rem;
+}
+
+/* Dismiss Button */
+.alert-dismiss {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: inherit;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.alert-dismiss:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .alert-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .alert-banner {
+    padding: 1rem;
+  }
+
+  .alert-icon {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark overlay for critical alerts */
+.alert-banner.critical::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.1), transparent);
+  animation: shimmer 2s infinite;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+

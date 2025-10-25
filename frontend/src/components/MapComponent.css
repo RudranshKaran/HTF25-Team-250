@@ -156,3 +156,89 @@
   margin-top: 0.3rem;
 }
 
+/* Heatmap Gradient Legend */
+.heatmap-gradient {
+  width: 60px !important;
+  height: 20px;
+  background: linear-gradient(to right, green, yellow, orange, red);
+  border-radius: 3px;
+}
+
+/* Crowd Phase Status Badge */
+.phase-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  animation: fadeInScale 0.4s ease-out;
+  border: 2px solid;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.phase-badge.phase-building {
+  border-color: #ffa500;
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.2), rgba(0, 0, 0, 0.9));
+}
+
+.phase-badge.phase-peak {
+  border-color: #ff4444;
+  background: linear-gradient(135deg, rgba(255, 68, 68, 0.3), rgba(0, 0, 0, 0.9));
+  animation: fadeInScale 0.4s ease-out, pulseBadge 2s ease-in-out infinite;
+}
+
+.phase-badge.phase-dispersing {
+  border-color: #4facfe;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 0, 0, 0.9));
+}
+
+.phase-badge.phase-low {
+  border-color: #00ff88;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 0, 0, 0.9));
+}
+
+@keyframes pulseBadge {
+  0%, 100% { 
+    box-shadow: 0 8px 25px rgba(255, 68, 68, 0.4);
+  }
+  50% { 
+    box-shadow: 0 8px 35px rgba(255, 68, 68, 0.8);
+  }
+}
+
+.phase-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.phase-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.phase-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.phase-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.5px;
+}
+

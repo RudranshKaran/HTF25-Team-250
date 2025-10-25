@@ -6,6 +6,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import MapComponent from './components/MapComponent';
 import WeatherWidget from './components/WeatherWidget';
+import MetroFlowWidget from './components/MetroFlowWidget';
+import AlertBanner from './components/AlertBanner';
 import './App.css';
 
 function App() {
@@ -14,10 +16,15 @@ function App() {
   const [wsClient, setWsClient] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   
-  // Phase 2: New data streams
+  // Phase 2: Data streams
   const [busData, setBusData] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
   const [busCount, setBusCount] = useState(0);
+  
+  // Phase 3: AI & Simulations
+  const [metroData, setMetroData] = useState(null);
+  const [densityData, setDensityData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
 
   // WebSocket connection logic
   const connectWebSocket = useCallback(() => {
@@ -60,6 +67,21 @@ function App() {
             // Update weather data
             console.log(`🌦️ Weather: ${data.temperature}°C, ${data.description}`);
             setWeatherData(data);
+            break;
+          case 'metro_update':
+            // Update metro flow data
+            console.log(`🚇 Metro: Entry ${data.entry_rate}/min, Exit ${data.exit_rate}/min`);
+            setMetroData(data);
+            break;
+          case 'density_update':
+            // Update crowd density data
+            console.log(`🔥 Density: Max ${data.max_density}, Avg ${data.avg_density}, Phase: ${data.phase?.toUpperCase()}`);
+            setDensityData(data);
+            break;
+          case 'alert':
+            // New alert received
+            console.log(`⚠️ ${data.level.toUpperCase()} ALERT: ${data.message}`);
+            setAlerts(prev => [data, ...prev].slice(0, 5)); // Keep last 5 alerts
             break;
           default:
             console.log('Unknown message type:', data.type);
@@ -139,11 +161,14 @@ function App() {
         </div>
       </header>
 
+      {/* Alert Notifications */}
+      <AlertBanner alerts={alerts} />
+
       {/* Main content area */}
       <div className="main-content">
         {/* Map component */}
         <div className="map-container">
-          <MapComponent busData={busData} />
+          <MapComponent busData={busData} densityData={densityData} />
         </div>
 
         {/* Side panel */}
@@ -152,6 +177,12 @@ function App() {
           <div className="panel-section weather-section">
             <WeatherWidget weatherData={weatherData} />
           </div>
+          
+          {/* Metro Flow Widget */}
+          <div className="panel-section metro-section">
+            <MetroFlowWidget metroData={metroData} />
+          </div>
+          
           <div className="panel-section">
             <h3>System Status</h3>
             <div className="status-grid">
@@ -173,6 +204,24 @@ function App() {
                 <span className="label">Weather:</span>
                 <span className="value">
                   {weatherData ? `${weatherData.temperature}°C` : 'Loading...'}
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="label">Max Density:</span>
+                <span className="value density-value">
+                  {densityData ? densityData.max_density : '-'}
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="label">Crowd Phase:</span>
+                <span className={`value phase-${densityData?.phase || 'unknown'}`}>
+                  {densityData?.phase ? densityData.phase.toUpperCase() : 'INITIALIZING'}
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="label">Active Alerts:</span>
+                <span className={`value ${alerts.length > 0 ? 'alert-active' : ''}`}>
+                  {alerts.length}
                 </span>
               </div>
             </div>

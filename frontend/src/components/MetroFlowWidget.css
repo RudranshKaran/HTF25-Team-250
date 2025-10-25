@@ -1,0 +1,228 @@
+/* Metro Flow Widget Styles */
+
+.metro-widget {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-left: 4px solid #4facfe;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.metro-widget.loading {
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.metro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.metro-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metro-status-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.metro-status-badge.high {
+  background: rgba(255, 107, 107, 0.3);
+  border: 1px solid #ff6b6b;
+}
+
+.metro-status-badge.moderate {
+  background: rgba(255, 165, 0, 0.3);
+  border: 1px solid #ffa500;
+}
+
+.metro-status-badge.low {
+  background: rgba(0, 255, 136, 0.3);
+  border: 1px solid #00ff88;
+}
+
+/* Station Name */
+.metro-station-name {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.flow-reason-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Flow Items */
+.metro-flows {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  align-items: center;
+}
+
+.flow-item {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.flow-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.02);
+}
+
+.flow-icon {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.flow-item.entry .flow-icon {
+  color: #4facfe;
+}
+
+.flow-item.exit .flow-icon {
+  color: #ff6b6b;
+}
+
+.flow-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.flow-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.flow-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.flow-unit {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.flow-divider {
+  width: 2px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Capacity Bar */
+.metro-capacity {
+  margin-bottom: 1rem;
+}
+
+.capacity-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.capacity-value {
+  font-weight: 700;
+}
+
+.capacity-bar {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.capacity-fill {
+  height: 100%;
+  transition: width 0.5s ease, background-color 0.5s ease;
+  border-radius: 5px;
+}
+
+/* Total Flow */
+.metro-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.total-value {
+  font-weight: 700;
+}
+
+/* Loading State */
+.metro-widget.loading .metro-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.metro-status {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .metro-widget {
+    padding: 1.2rem;
+  }
+
+  .metro-flows {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .flow-divider {
+    display: none;
+  }
+}
+

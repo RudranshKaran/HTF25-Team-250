@@ -116,8 +116,14 @@
 
 /* Weather Section */
 .weather-section {
-  padding: 1rem;
-  border-bottom: none;
+  padding: 0 !important;
+  border-bottom: 1px solid #2a3f5f;
+}
+
+/* Metro Section */
+.metro-section {
+  padding: 0 !important;
+  border-bottom: 1px solid #2a3f5f;
 }
 
 .panel-section {
@@ -175,6 +181,49 @@
 .status-item .value.bus-count {
   color: #ffd700;
   font-weight: 700;
+}
+
+.density-value {
+  color: #ff6b6b !important;
+  font-weight: 700;
+}
+
+.alert-active {
+  color: #ff6b6b !important;
+  font-weight: 700;
+  animation: alertBlink 1s ease-in-out infinite;
+}
+
+@keyframes alertBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Crowd Phase Indicators */
+.value.phase-building {
+  color: #ffa500 !important;
+  font-weight: 700;
+}
+
+.value.phase-peak {
+  color: #ff4444 !important;
+  font-weight: 900;
+  animation: pulsePeak 1.5s ease-in-out infinite;
+}
+
+.value.phase-dispersing {
+  color: #4facfe !important;
+  font-weight: 700;
+}
+
+.value.phase-low {
+  color: #00ff88 !important;
+  font-weight: 600;
+}
+
+@keyframes pulsePeak {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 /* Test Button */

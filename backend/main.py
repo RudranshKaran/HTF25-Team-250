@@ -12,9 +12,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from api_handlers import fetch_bmtc_bus_data, fetch_weather_data, format_bus_summary, format_weather_summary
+from simulations import (
+    simulate_metro_flow, simulate_crowd_density, check_alerts,
+    format_metro_summary, format_density_summary
+)
 
 # Load environment variables
 load_dotenv()
+
+# Store latest data for alert checking
+latest_density_data = None
+latest_metro_data = None
 
 # Initialize FastAPI app
 app = FastAPI(title="Crowd Safety Intelligence System")
@@ -143,6 +151,66 @@ async def weather_data_task():
         
         await asyncio.sleep(300)  # Fetch every 5 minutes (300 seconds)
 
+
+# Background task for metro flow simulation
+async def metro_simulation_task():
+    """Generate and broadcast metro flow data every 60 seconds"""
+    global latest_metro_data
+    await asyncio.sleep(7)  # Initial delay
+    
+    print("Metro simulation task started")
+    
+    while True:
+        if manager.active_connections:
+            try:
+                metro_data = simulate_metro_flow()
+                latest_metro_data = metro_data
+                
+                await manager.broadcast(metro_data)
+                print(f"🚇 Metro broadcast: {format_metro_summary(metro_data)}")
+                
+                # Check alerts
+                if latest_density_data:
+                    alerts = check_alerts(latest_density_data, metro_data)
+                    for alert in alerts:
+                        await manager.broadcast(alert)
+                        print(f"⚠️  Alert: {alert['level'].upper()} - {alert['message']}")
+                        
+            except Exception as e:
+                print(f"❌ Metro task error: {e}")
+        
+        await asyncio.sleep(60)  # Update every 60 seconds
+
+
+# Background task for crowd density simulation
+async def density_simulation_task():
+    """Generate and broadcast crowd density data every 30 seconds"""
+    global latest_density_data
+    await asyncio.sleep(10)  # Initial delay
+    
+    print("Crowd density simulation task started")
+    
+    while True:
+        if manager.active_connections:
+            try:
+                density_data = simulate_crowd_density()
+                latest_density_data = density_data
+                
+                await manager.broadcast(density_data)
+                print(f"🔥 Density broadcast: {format_density_summary(density_data)}")
+                
+                # Check alerts
+                if latest_metro_data:
+                    alerts = check_alerts(density_data, latest_metro_data)
+                    for alert in alerts:
+                        await manager.broadcast(alert)
+                        print(f"⚠️  Alert: {alert['level'].upper()} - {alert['message']}")
+                        
+            except Exception as e:
+                print(f"❌ Density task error: {e}")
+        
+        await asyncio.sleep(30)  # Update every 30 seconds
+
 # Routes
 @app.get("/")
 async def root():
@@ -208,11 +276,15 @@ async def startup_event():
     asyncio.create_task(test_broadcast_task())
     asyncio.create_task(bmtc_data_task())
     asyncio.create_task(weather_data_task())
+    asyncio.create_task(metro_simulation_task())
+    asyncio.create_task(density_simulation_task())
     
     print("✅ Background tasks started:")
     print("   - Test messages (every 10s)")
     print("   - BMTC bus GPS (every 30s)")
     print("   - Weather data (every 5min)")
+    print("   - Metro flow simulation (every 60s)")
+    print("   - Crowd density simulation (every 30s)")
     print("=" * 60)
 
 if __name__ == "__main__":

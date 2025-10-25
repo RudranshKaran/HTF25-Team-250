@@ -3,10 +3,11 @@
  * Displays static locations and dynamic BMTC bus markers
  */
 
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { useEffect, useState, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import 'leaflet.heat';
 import './MapComponent.css';
 
 // Fix for default marker icons in React-Leaflet
@@ -30,8 +31,92 @@ const BENGALURU_CENTER = [12.9791, 77.5993];
 const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
 const MG_ROAD_METRO = [12.9756, 77.6057];
 
-function MapComponent({ busData }) {
+// Heatmap Layer Component
+function HeatmapLayer({ densityData }) {
+  const map = useMap();
+  const heatLayerRef = useRef(null);
+
+  useEffect(() => {
+    if (!densityData || !densityData.grid) return;
+
+    // Remove existing heat layer
+    if (heatLayerRef.current) {
+      map.removeLayer(heatLayerRef.current);
+    }
+
+    // Convert grid to heatmap points
+    const heatPoints = [];
+    const { grid, center_location, grid_size } = densityData;
+    
+    // Find max density for normalization
+    let maxDensity = 0;
+    grid.forEach(row => {
+      row.forEach(density => {
+        if (density > maxDensity) maxDensity = density;
+      });
+    });
+    
+    console.log('🔥 Heatmap Update:', {
+      maxDensity,
+      avgDensity: densityData.avg_density,
+      gridSize: grid_size,
+      isEventTime: densityData.is_event_time
+    });
+    
+    grid.forEach((row, i) => {
+      row.forEach((density, j) => {
+        // Show all densities > 5 for better visualization
+        if (density > 5) {
+          // Convert grid position to lat/lon
+          const lat_offset = (i - grid_size / 2) * 0.002;
+          const lon_offset = (j - grid_size / 2) * 0.002;
+          const lat = center_location[0] + lat_offset;
+          const lon = center_location[1] + lon_offset;
+          
+          // Normalize intensity to 0-1 range based on actual max
+          // Use square root for better visual distribution
+          const normalizedIntensity = Math.sqrt(density / Math.max(maxDensity, 100));
+          
+          // Heatmap expects [lat, lon, intensity]
+          heatPoints.push([lat, lon, normalizedIntensity]);
+        }
+      });
+    });
+
+    console.log('🗺️ Heatmap points:', heatPoints.length);
+
+    // Create heat layer with improved settings
+    if (heatPoints.length > 0) {
+      heatLayerRef.current = L.heatLayer(heatPoints, {
+        radius: 30,
+        blur: 20,
+        maxZoom: 18,
+        max: 1.0,
+        minOpacity: 0.3,
+        gradient: {
+          0.0: 'rgba(0, 255, 0, 0)',
+          0.2: 'lime',
+          0.4: 'yellow',
+          0.6: 'orange',
+          0.8: 'red',
+          1.0: 'darkred'
+        }
+      }).addTo(map);
+    }
+
+    return () => {
+      if (heatLayerRef.current) {
+        map.removeLayer(heatLayerRef.current);
+      }
+    };
+  }, [densityData, map]);
+
+  return null;
+}
+
+function MapComponent({ busData, densityData }) {
   const [buses, setBuses] = useState([]);
+  const [hotspots, setHotspots] = useState([]);
 
   // Update buses when new data arrives
   useEffect(() => {
@@ -47,6 +132,13 @@ function MapComponent({ busData }) {
     }
   }, [busData]);
 
+  // Update hotspots when density data arrives
+  useEffect(() => {
+    if (densityData && densityData.hotspots) {
+      setHotspots(densityData.hotspots);
+    }
+  }, [densityData]);
+
   return (
     <div className="map-wrapper">
       <MapContainer
@@ -61,6 +153,9 @@ function MapComponent({ busData }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
+
+        {/* Crowd Density Heatmap */}
+        <HeatmapLayer densityData={densityData} />
 
         {/* Key Location Markers */}
         
@@ -124,6 +219,32 @@ function MapComponent({ busData }) {
           </Popup>
         </Circle>
 
+        {/* Crowd Density Hotspot Markers */}
+        {hotspots.map((hotspot, index) => (
+          <Circle
+            key={`hotspot-${index}-${hotspot.density}`}
+            center={[hotspot.lat, hotspot.lon]}
+            radius={50}
+            pathOptions={{
+              color: hotspot.density > 200 ? '#8B0000' : hotspot.density > 150 ? '#FF4500' : '#FF8C00',
+              fillColor: hotspot.density > 200 ? 'darkred' : hotspot.density > 150 ? 'red' : 'orange',
+              fillOpacity: 0.5,
+              weight: 3
+            }}
+          >
+            <Popup>
+              <div className="custom-popup">
+                <strong>🔥 Crowd Hotspot #{index + 1}</strong><br/>
+                <p><strong>Density:</strong> {hotspot.density} people</p>
+                <p><strong>Alert Level:</strong> {
+                  hotspot.density > 200 ? '🚨 CRITICAL' :
+                  hotspot.density > 150 ? '⚠️ HIGH' : '⚡ MODERATE'
+                }</p>
+              </div>
+            </Popup>
+          </Circle>
+        ))}
+
         {/* Dynamic BMTC Bus Markers */}
         {buses.map((bus, index) => (
           <Marker
@@ -165,6 +286,14 @@ function MapComponent({ busData }) {
           <span className="legend-icon">🚌</span>
           <span>BMTC Buses ({buses.length})</span>
         </div>
+        <div className="legend-item">
+          <span className="legend-color heatmap-gradient"></span>
+          <span>Crowd Density</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🔥</span>
+          <span>Hotspots ({hotspots.length})</span>
+        </div>
       </div>
 
       {/* Map Overlay Info */}
@@ -172,6 +301,22 @@ function MapComponent({ busData }) {
         <h4>📍 Bengaluru, Karnataka</h4>
         <p>Focus Area: M. Chinnaswamy Stadium & MG Road</p>
       </div>
+
+      {/* Crowd Phase Status Badge */}
+      {densityData && densityData.phase && (
+        <div className={`phase-badge phase-${densityData.phase}`}>
+          <div className="phase-icon">
+            {densityData.phase === 'building' && '📈'}
+            {densityData.phase === 'peak' && '🚨'}
+            {densityData.phase === 'dispersing' && '📉'}
+            {densityData.phase === 'low' && '✅'}
+          </div>
+          <div className="phase-content">
+            <div className="phase-label">Crowd Status</div>
+            <div className="phase-text">{densityData.status || densityData.phase.toUpperCase()}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
