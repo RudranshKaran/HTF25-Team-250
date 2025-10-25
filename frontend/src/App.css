@@ -1,0 +1,253 @@
+/* Main Application Styles */
+.App {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0a0e27;
+  color: #ffffff;
+}
+
+/* Header Styles */
+.app-header {
+  background: linear-gradient(135deg, #1a1f3a 0%, #0f1628 100%);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #2a3f5f;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.header-left h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  font-weight: 700;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.9rem;
+  color: #8b9dc3;
+  font-weight: 400;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Status Indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.connected .status-dot {
+  background: #00ff88;
+  box-shadow: 0 0 10px #00ff88;
+}
+
+.status-indicator.connecting .status-dot {
+  background: #ffa500;
+  box-shadow: 0 0 10px #ffa500;
+}
+
+.status-indicator.disconnected .status-dot {
+  background: #ff4444;
+  box-shadow: 0 0 10px #ff4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-text {
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.last-update {
+  font-size: 0.85rem;
+  color: #8b9dc3;
+}
+
+/* Main Content Layout */
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Side Panel */
+.side-panel {
+  width: 350px;
+  background: #0f1628;
+  border-left: 2px solid #2a3f5f;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.panel-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #2a3f5f;
+}
+
+.panel-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #4facfe;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+/* Status Grid */
+.status-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+}
+
+.status-item .label {
+  color: #8b9dc3;
+  font-size: 0.9rem;
+}
+
+.status-item .value {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.status-item .value.connected {
+  color: #00ff88;
+}
+
+.status-item .value.disconnected {
+  color: #ff4444;
+}
+
+.status-item .value.connecting {
+  color: #ffa500;
+}
+
+/* Test Button */
+.test-button {
+  width: 100%;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.test-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.test-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Messages Log */
+.messages-log {
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  padding: 0.5rem;
+}
+
+.no-messages {
+  color: #8b9dc3;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.message-item {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.message-type {
+  color: #4facfe;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.message-text {
+  color: #ddd;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Scrollbar Styling */
+.messages-log::-webkit-scrollbar,
+.side-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-log::-webkit-scrollbar-track,
+.side-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.messages-log::-webkit-scrollbar-thumb,
+.side-panel::-webkit-scrollbar-thumb {
+  background: #4facfe;
+  border-radius: 3px;
+}
+
+.messages-log::-webkit-scrollbar-thumb:hover,
+.side-panel::-webkit-scrollbar-thumb:hover {
+  background: #357abd;
+}
+

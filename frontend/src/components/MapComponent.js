@@ -1,0 +1,136 @@
+/**
+ * MapComponent - Leaflet map centered on Bengaluru
+ * Uses Mapbox satellite tiles for base layer
+ */
+
+import React from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import './MapComponent.css';
+
+// Fix for default marker icons in React-Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Bengaluru coordinates (M. Chinnaswamy Stadium area)
+const BENGALURU_CENTER = [12.9791, 77.5993];
+const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
+const MG_ROAD_METRO = [12.9756, 77.6057];
+
+// Mapbox access token (using placeholder - users should replace with their own)
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+
+function MapComponent() {
+  return (
+    <div className="map-wrapper">
+      <MapContainer
+        center={BENGALURU_CENTER}
+        zoom={14}
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={true}
+      >
+        {/* Mapbox Satellite Tile Layer */}
+        <TileLayer
+          attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+          url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`}
+          tileSize={512}
+          zoomOffset={-1}
+          maxZoom={18}
+        />
+
+        {/* Key Location Markers */}
+        
+        {/* M. Chinnaswamy Stadium */}
+        <Marker position={CHINNASWAMY_STADIUM}>
+          <Popup>
+            <div className="custom-popup">
+              <h3>🏏 M. Chinnaswamy Stadium</h3>
+              <p>Major event venue - High crowd density zone</p>
+              <p><strong>Capacity:</strong> 40,000+</p>
+            </div>
+          </Popup>
+        </Marker>
+        
+        {/* Event Zone Circle */}
+        <Circle
+          center={CHINNASWAMY_STADIUM}
+          radius={500}
+          pathOptions={{
+            color: '#ff6b6b',
+            fillColor: '#ff6b6b',
+            fillOpacity: 0.2,
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <div className="custom-popup">
+              <strong>Event Monitoring Zone</strong>
+              <p>500m radius around stadium</p>
+            </div>
+          </Popup>
+        </Circle>
+
+        {/* MG Road Metro Station */}
+        <Marker position={MG_ROAD_METRO}>
+          <Popup>
+            <div className="custom-popup">
+              <h3>🚇 MG Road Metro Station</h3>
+              <p>High traffic transit hub</p>
+              <p>Purple & Green Line interchange</p>
+            </div>
+          </Popup>
+        </Marker>
+
+        {/* Metro Station Monitoring Circle */}
+        <Circle
+          center={MG_ROAD_METRO}
+          radius={300}
+          pathOptions={{
+            color: '#4ecdc4',
+            fillColor: '#4ecdc4',
+            fillOpacity: 0.15,
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <div className="custom-popup">
+              <strong>Metro Transit Zone</strong>
+              <p>300m radius monitoring</p>
+            </div>
+          </Popup>
+        </Circle>
+      </MapContainer>
+
+      {/* Map Legend */}
+      <div className="map-legend">
+        <h4>Map Legend</h4>
+        <div className="legend-item">
+          <span className="legend-color" style={{ background: '#ff6b6b' }}></span>
+          <span>Event Zone (500m)</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ background: '#4ecdc4' }}></span>
+          <span>Metro Transit Zone (300m)</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">📍</span>
+          <span>Key Locations</span>
+        </div>
+      </div>
+
+      {/* Map Overlay Info */}
+      <div className="map-info">
+        <h4>📍 Bengaluru, Karnataka</h4>
+        <p>Focus Area: M. Chinnaswamy Stadium & MG Road</p>
+      </div>
+    </div>
+  );
+}
+
+export default MapComponent;
+
