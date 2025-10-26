@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import MapComponent from '../MapComponent';
 import CrowdRiskIndicator from '../CrowdRiskIndicator';
 import WeatherWidget from '../WeatherWidget';
 import MetroFlowWidget from '../MetroFlowWidget';
+import ZoneSelector from '../ZoneSelector';
 import './LiveOperationsView.css';
 
 const LiveOperationsView = ({ 
@@ -14,6 +15,15 @@ const LiveOperationsView = ({
   alerts,
   messages
 }) => {
+  // Zone state management
+  const [selectedZone, setSelectedZone] = useState('all');
+
+  // Handle zone change
+  const handleZoneChange = (zoneId) => {
+    setSelectedZone(zoneId);
+    console.log(`📍 Zone changed to: ${zoneId}`);
+  };
+
   // Calculate statistics
   const busCount = busData?.buses?.length || 0;
   const responderCount = firstResponders ? 
@@ -33,12 +43,21 @@ const LiveOperationsView = ({
 
   return (
     <div className="live-operations-view">
+      {/* Zone Selector */}
+      <div className="operations-zone-selector">
+        <ZoneSelector 
+          selectedZone={selectedZone}
+          onZoneChange={handleZoneChange}
+        />
+      </div>
+
       {/* Main Map Area - 70% */}
       <div className="operations-map-area">
         <MapComponent 
           busData={busData} 
           densityData={densityData} 
-          firstResponders={firstResponders} 
+          firstResponders={firstResponders}
+          selectedZone={selectedZone}
         />
       </div>
 

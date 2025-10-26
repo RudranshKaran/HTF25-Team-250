@@ -1,12 +1,37 @@
 /* Live Operations View Container */
 .live-operations-view {
   display: flex;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
   height: 100%;
   width: 100%;
   padding: 1.5rem;
   overflow: auto; /* Allow scrolling if content exceeds viewport */
   box-sizing: border-box;
+}
+
+/* Zone Selector Area */
+.operations-zone-selector {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Main Content Area (Map + Side Panel) */
+.live-operations-view > .operations-map-area,
+.live-operations-view > .operations-side-panel {
+  flex-shrink: 0;
+}
+
+/* Adjust flex layout for map and panel */
+.live-operations-view {
+  display: grid;
+  grid-template-columns: 70% calc(30% - 1rem);
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.operations-zone-selector {
+  grid-column: 1 / -1;
 }
 
 /* Map Area - 70% */

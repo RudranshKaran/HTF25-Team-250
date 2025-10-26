@@ -1,0 +1,102 @@
+/* Zone Selector Container */
+.zone-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #1a1f3a 0%, #0f1628 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Label */
+.zone-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+}
+
+.zone-label-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.zone-label-text {
+  white-space: nowrap;
+}
+
+/* Dropdown */
+.zone-dropdown {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 3rem;
+}
+
+.zone-dropdown:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(79, 172, 254, 0.4);
+}
+
+.zone-dropdown:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown Options */
+.zone-dropdown option {
+  background: #1a1f3a;
+  color: #ffffff;
+  padding: 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .zone-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .zone-label-text {
+    display: none;
+  }
+
+  .zone-dropdown {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .zone-selector {
+    padding: 0.75rem;
+  }
+
+  .zone-dropdown {
+    font-size: 0.85rem;
+    padding: 0.6rem 0.75rem;
+    padding-right: 2.5rem;
+  }
+}
+

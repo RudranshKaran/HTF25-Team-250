@@ -131,10 +131,46 @@ function HeatmapLayer({ densityData }) {
   return null;
 }
 
-function MapComponent({ busData, densityData, firstResponders }) {
+// Component to handle map centering on zone selection
+function ZoneCenterController({ selectedZone, zones }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (selectedZone && selectedZone !== 'all' && zones[selectedZone]) {
+      const zone = zones[selectedZone];
+      // Calculate appropriate zoom level based on radius
+      const zoomLevel = zone.radius > 1500 ? 13 : zone.radius > 800 ? 14 : 15;
+      map.flyTo(zone.center, zoomLevel, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
+    } else if (selectedZone === 'all') {
+      // Show all of Bengaluru
+      map.flyTo([12.9716, 77.5946], 12, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
+    }
+  }, [selectedZone, zones, map]);
+
+  return null;
+}
+
+function MapComponent({ busData, densityData, firstResponders, selectedZone = 'all' }) {
   const [buses, setBuses] = useState([]);
   const [hotspots, setHotspots] = useState([]);
   const [responders, setResponders] = useState([]);
+
+  // Zone definitions
+  const zones = {
+    stadium: { center: [12.9789, 77.5993], radius: 1000, color: '#ff4444', name: 'Chinnaswamy Stadium' },
+    mg_road_metro: { center: [12.9756, 77.6057], radius: 500, color: '#4169e1', name: 'MG Road Metro' },
+    majestic: { center: [12.9767, 77.5713], radius: 800, color: '#ff8c00', name: 'Majestic Bus Stand' },
+    electronic_city: { center: [12.8450, 77.6628], radius: 2000, color: '#32cd32', name: 'Electronic City' },
+    koramangala: { center: [12.9352, 77.6245], radius: 1500, color: '#ffd700', name: 'Koramangala' },
+    indiranagar: { center: [12.9784, 77.6408], radius: 1200, color: '#9370db', name: 'Indiranagar' },
+    cubbon_park: { center: [12.9762, 77.5929], radius: 1000, color: '#20b2aa', name: 'Cubbon Park Area' }
+  };
 
   // Update buses when new data arrives
   useEffect(() => {
@@ -181,6 +217,9 @@ function MapComponent({ busData, densityData, firstResponders }) {
 
         {/* Crowd Density Heatmap */}
         <HeatmapLayer densityData={densityData} />
+
+        {/* Zone Center Controller */}
+        <ZoneCenterController selectedZone={selectedZone} zones={zones} />
 
         {/* Key Location Markers */}
         
@@ -243,6 +282,30 @@ function MapComponent({ busData, densityData, firstResponders }) {
             </div>
           </Popup>
         </Circle>
+
+        {/* Multi-Zone Circles */}
+        {Object.entries(zones).map(([zoneId, zone]) => (
+          <Circle
+            key={`zone-${zoneId}`}
+            center={zone.center}
+            radius={zone.radius}
+            pathOptions={{
+              color: zone.color,
+              fillColor: zone.color,
+              fillOpacity: selectedZone === zoneId ? 0.25 : selectedZone === 'all' ? 0.1 : 0.05,
+              weight: selectedZone === zoneId ? 3 : selectedZone === 'all' ? 2 : 1,
+              dashArray: selectedZone === zoneId ? null : '5, 10'
+            }}
+          >
+            <Popup>
+              <div className="custom-popup">
+                <h3>{zone.name}</h3>
+                <p><strong>Monitoring Zone</strong></p>
+                <p>Radius: {zone.radius}m</p>
+              </div>
+            </Popup>
+          </Circle>
+        ))}
 
         {/* Crowd Density Hotspot Markers */}
         {hotspots.map((hotspot, index) => (
