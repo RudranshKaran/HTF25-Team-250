@@ -2,6 +2,16 @@
    NEW DASHBOARD LAYOUT STYLES - PHASE 1
    ============================================ */
 
+/* Z-Index Hierarchy */
+/*
+  1-10: Map and base content
+  100-200: Sidebar navigation
+  500-800: Floating panels (if any)
+  900-1000: Header
+  1500-2000: Alert banners
+  10000+: Modals and overlays
+*/
+
 /* Main Application Styles */
 .App {
   height: 100vh;
@@ -74,8 +84,10 @@
 /* Section Content Area */
 .section-content {
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
   min-height: 0;
+  height: 100%;
+  position: relative;
 }
 
 /* Header Styles */

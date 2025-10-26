@@ -3,17 +3,22 @@
   display: flex;
   gap: 1.5rem;
   height: 100%;
+  width: 100%;
   padding: 1.5rem;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Map Area - 70% */
 .operations-map-area {
   flex: 0 0 70%;
   height: 100%;
+  min-height: 500px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 /* Side Panel - 30% */
@@ -24,6 +29,8 @@
   gap: 1rem;
   overflow-y: auto;
   overflow-x: hidden;
+  height: 100%;
+  max-height: 100%;
 }
 
 /* Operations Cards */

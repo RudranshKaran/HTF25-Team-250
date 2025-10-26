@@ -554,18 +554,7 @@ function App() {
         onClose={() => setShowKeyboardShortcuts(false)}
       />
       
-      {/* Legacy Floating Panels (hidden on most sections, shown only when needed) */}
-      {activeSection === 'operations' && (
-        <>
-          <InsightsDock 
-            densityData={densityData}
-            metroData={metroData}
-            connectionStatus={connectionStatus}
-            messagesReceived={messageCount}
-          />
-          <QuickActions onAction={handleQuickAction} />
-        </>
-      )}
+      {/* Legacy Floating Panels - REMOVED for cleaner layout */}
       
       {/* Slim Header */}
       <header className="app-header-slim">

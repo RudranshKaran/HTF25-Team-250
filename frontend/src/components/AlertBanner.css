@@ -2,13 +2,14 @@
 
 .alert-container {
   position: fixed;
-  top: 80px;
+  top: 100px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2000;
-  max-width: 900px;
-  width: 90%;
+  z-index: 1500;
+  max-width: 800px;
+  width: 85%;
   animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
 
 @keyframes slideDown {
