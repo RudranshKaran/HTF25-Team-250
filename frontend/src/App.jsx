@@ -116,7 +116,7 @@ function App() {
             const alertKey = `${data.category}-${data.zone}-${data.level}`;
             const now = Date.now();
             const lastAlertTime = alertDedupeMap.current.get(alertKey);
-            const isDuplicate = lastAlertTime && (now - lastAlertTime.timestamp) < 30000; // 30 seconds
+            const isDuplicate = lastAlertTime && (now - lastAlertTime.timestamp) < 60000; // 60 seconds (1 minute)
             
             // Add to notification hub (with deduplication)
             addNotification(data);
@@ -205,9 +205,9 @@ function App() {
     const alertKey = `${alert.category}-${alert.zone}-${alert.level}`;
     const now = Date.now();
     
-    // Check for duplicate within last 30 seconds
+    // Check for duplicate within last 60 seconds (1 minute)
     const existing = alertDedupeMap.current.get(alertKey);
-    if (existing && (now - existing.timestamp) < 30000) {
+    if (existing && (now - existing.timestamp) < 60000) {
       // Update existing notification instead of creating new one
       setAllNotifications(prev => 
         prev.map(notif => 
@@ -239,9 +239,9 @@ function App() {
       setTimeout(() => setHasNewCritical(false), 3000);
     }
     
-    // Cleanup old dedupe entries (older than 1 minute)
+    // Cleanup old dedupe entries (older than 2 minutes)
     alertDedupeMap.current.forEach((value, key) => {
-      if (now - value.timestamp > 60000) {
+      if (now - value.timestamp > 120000) {
         alertDedupeMap.current.delete(key);
       }
     });

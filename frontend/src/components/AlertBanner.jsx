@@ -28,10 +28,10 @@ function AlertBanner({ alerts, onDismiss }) {
         if (!currentAlert || currentAlert.id !== newAlert.id) {
           setCurrentAlert(newAlert);
           
-          // Auto-dismiss after 15 seconds
+          // Auto-dismiss after 30 seconds
           const timer = setTimeout(() => {
             setCurrentAlert(null);
-          }, 15000);
+          }, 30000);
           
           return () => clearTimeout(timer);
         }
