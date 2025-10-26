@@ -21,16 +21,29 @@ const CrowdInsightsView = ({
   const [activeTab, setActiveTab] = useState('insights');
   const [reportPeriod, setReportPeriod] = useState('1hour');
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(null); // Tracks which operation is currently generating
 
   // Fetch AI Insights
   const fetchInsights = useCallback(async () => {
+    // Prevent concurrent operations
+    if (isGenerating) {
+      setError(`Cannot start new operation. ${isGenerating} is currently generating. Please wait.`);
+      return;
+    }
+    
+    setIsGenerating('Insights');
     setLoading(true);
     setError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    
     try {
       const response = await fetch('http://localhost:8000/api/ai/insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(multiZoneDensityData)
+        body: JSON.stringify(multiZoneDensityData),
+        signal: controller.signal
       });
       const data = await response.json();
       if (data.status === 'success') {
@@ -39,24 +52,42 @@ const CrowdInsightsView = ({
         setError(data.message);
       }
     } catch (err) {
-      setError(`Failed to fetch insights: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Insights generation timed out after 90 seconds');
+      } else {
+        setError(`Failed to fetch insights: ${err.message}`);
+      }
       console.error('Insights error:', err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      setIsGenerating(null);
     }
-  }, [multiZoneDensityData]);
+  }, [multiZoneDensityData, isGenerating]);
 
   // Fetch Action Plan
   const fetchActionPlan = useCallback(async () => {
+    // Prevent concurrent operations
+    if (isGenerating) {
+      setError(`Cannot start new operation. ${isGenerating} is currently generating. Please wait.`);
+      return;
+    }
+    
+    setIsGenerating('Action Plan');
     setLoading(true);
     setError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    
     try {
       const response = await fetch(
         `http://localhost:8000/api/ai/action-plan?zone=${selectedZone}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(multiZoneDensityData)
+          body: JSON.stringify(multiZoneDensityData),
+          signal: controller.signal
         }
       );
       const data = await response.json();
@@ -66,20 +97,38 @@ const CrowdInsightsView = ({
         setError(data.message);
       }
     } catch (err) {
-      setError(`Failed to fetch action plan: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Action plan generation timed out after 90 seconds');
+      } else {
+        setError(`Failed to fetch action plan: ${err.message}`);
+      }
       console.error('Action plan error:', err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      setIsGenerating(null);
     }
-  }, [multiZoneDensityData, selectedZone]);
+  }, [multiZoneDensityData, selectedZone, isGenerating]);
 
   // Fetch Transportation Info
   const fetchTransportation = useCallback(async () => {
+    // Prevent concurrent operations
+    if (isGenerating) {
+      setError(`Cannot start new operation. ${isGenerating} is currently generating. Please wait.`);
+      return;
+    }
+    
+    setIsGenerating('Transportation');
     setLoading(true);
     setError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    
     try {
       const response = await fetch(
-        `http://localhost:8000/api/ai/nearest-transportation?zone=${selectedZone}`
+        `http://localhost:8000/api/ai/nearest-transportation?zone=${selectedZone}`,
+        { signal: controller.signal }
       );
       const data = await response.json();
       if (data.status === 'success') {
@@ -88,24 +137,42 @@ const CrowdInsightsView = ({
         setError(data.message);
       }
     } catch (err) {
-      setError(`Failed to fetch transportation: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Transportation lookup timed out after 90 seconds');
+      } else {
+        setError(`Failed to fetch transportation: ${err.message}`);
+      }
       console.error('Transportation error:', err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      setIsGenerating(null);
     }
-  }, [selectedZone]);
+  }, [selectedZone, isGenerating]);
 
   // Fetch Traffic Diversion
   const fetchTrafficDiversion = useCallback(async () => {
+    // Prevent concurrent operations
+    if (isGenerating) {
+      setError(`Cannot start new operation. ${isGenerating} is currently generating. Please wait.`);
+      return;
+    }
+    
+    setIsGenerating('Traffic Diversion');
     setLoading(true);
     setError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    
     try {
       const response = await fetch(
         `http://localhost:8000/api/ai/traffic-diversion?zone=${selectedZone}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(multiZoneDensityData)
+          body: JSON.stringify(multiZoneDensityData),
+          signal: controller.signal
         }
       );
       const data = await response.json();
@@ -115,20 +182,38 @@ const CrowdInsightsView = ({
         setError(data.message);
       }
     } catch (err) {
-      setError(`Failed to fetch traffic diversion: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Traffic diversion generation timed out after 90 seconds');
+      } else {
+        setError(`Failed to fetch traffic diversion: ${err.message}`);
+      }
       console.error('Traffic diversion error:', err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      setIsGenerating(null);
     }
-  }, [multiZoneDensityData, selectedZone]);
+  }, [multiZoneDensityData, selectedZone, isGenerating]);
 
   // Generate Report
   const generateReport = useCallback(async () => {
+    // Prevent concurrent operations
+    if (isGenerating) {
+      setError(`Cannot start new operation. ${isGenerating} is currently generating. Please wait.`);
+      return;
+    }
+    
+    setIsGenerating('Report');
     setGeneratingReport(true);
     setError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    
     try {
       const response = await fetch(
-        `http://localhost:8000/api/ai/report?period=${reportPeriod}`
+        `http://localhost:8000/api/ai/report?period=${reportPeriod}`,
+        { signal: controller.signal }
       );
       const data = await response.json();
       if (data.status === 'success') {
@@ -137,22 +222,22 @@ const CrowdInsightsView = ({
         setError(data.message);
       }
     } catch (err) {
-      setError(`Failed to generate report: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Report generation timed out after 90 seconds');
+      } else {
+        setError(`Failed to generate report: ${err.message}`);
+      }
       console.error('Report error:', err);
     } finally {
+      clearTimeout(timeoutId);
       setGeneratingReport(false);
+      setIsGenerating(null);
     }
-  }, [reportPeriod]);
+  }, [reportPeriod, isGenerating]);
 
-  // Auto-fetch insights when data changes
-  useEffect(() => {
-    if (multiZoneDensityData && Object.keys(multiZoneDensityData).length > 0) {
-      if (activeTab === 'insights') fetchInsights();
-      if (activeTab === 'actions') fetchActionPlan();
-      if (activeTab === 'transportation') fetchTransportation();
-      if (activeTab === 'diversion') fetchTrafficDiversion();
-    }
-  }, [multiZoneDensityData, activeTab, selectedZone]);
+  // Note: AI insights are NO LONGER auto-generated on tab/data change
+  // They now only generate when the user clicks the "Generate" button
+  // This allows for on-demand generation and prevents concurrent operations
 
   // Download report as text file
   const downloadReport = () => {
@@ -280,9 +365,12 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No insights available. Click to generate.</p>
             )}
-            <button onClick={fetchInsights} disabled={loading} className="refresh-btn">
-              {loading ? '⏳ Analyzing...' : '🔄 Refresh Insights'}
+            <button onClick={fetchInsights} disabled={isGenerating} className="refresh-btn">
+              {isGenerating === 'Insights' ? '⏳ Analyzing...' : '🔄 Generate Insights'}
             </button>
+            {isGenerating && isGenerating !== 'Insights' && (
+              <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
+            )}
           </div>
         )}
 
@@ -344,9 +432,12 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No action plan available. Click to generate.</p>
             )}
-            <button onClick={fetchActionPlan} disabled={loading} className="refresh-btn">
-              {loading ? '⏳ Generating...' : '🔄 Generate Action Plan'}
+            <button onClick={fetchActionPlan} disabled={isGenerating} className="refresh-btn">
+              {isGenerating === 'Action Plan' ? '⏳ Generating...' : '🔄 Generate Action Plan'}
             </button>
+            {isGenerating && isGenerating !== 'Action Plan' && (
+              <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
+            )}
           </div>
         )}
 
@@ -428,9 +519,12 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No transportation data available. Click to fetch.</p>
             )}
-            <button onClick={fetchTransportation} disabled={loading} className="refresh-btn">
-              {loading ? '⏳ Fetching...' : '🔄 Find Transportation'}
+            <button onClick={fetchTransportation} disabled={isGenerating} className="refresh-btn">
+              {isGenerating === 'Transportation' ? '⏳ Finding...' : '🔄 Find Transportation'}
             </button>
+            {isGenerating && isGenerating !== 'Transportation' && (
+              <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
+            )}
           </div>
         )}
 
@@ -511,9 +605,12 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No diversion data available. Click to generate.</p>
             )}
-            <button onClick={fetchTrafficDiversion} disabled={loading} className="refresh-btn">
-              {loading ? '⏳ Calculating...' : '🔄 Generate Diversion Plan'}
+            <button onClick={fetchTrafficDiversion} disabled={isGenerating} className="refresh-btn">
+              {isGenerating === 'Traffic Diversion' ? '⏳ Calculating...' : '🔄 Generate Diversion Plan'}
             </button>
+            {isGenerating && isGenerating !== 'Traffic Diversion' && (
+              <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
+            )}
           </div>
         )}
 
@@ -531,11 +628,14 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
               </select>
               <button 
                 onClick={generateReport} 
-                disabled={generatingReport} 
+                disabled={isGenerating} 
                 className="refresh-btn"
               >
-                {generatingReport ? '⏳ Generating...' : '📄 Generate Report'}
+                {isGenerating === 'Report' ? '⏳ Generating...' : '📄 Generate Report'}
               </button>
+              {isGenerating && isGenerating !== 'Report' && (
+                <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
+              )}
             </div>
 
             {generatingReport ? (
