@@ -82,7 +82,8 @@ class ConnectionManager:
     async def broadcast(self, message: dict):
         """Broadcast a message to all connected clients"""
         disconnected = set()
-        for connection in self.active_connections:
+        # Create a copy to avoid "Set changed size during iteration" error
+        for connection in list(self.active_connections):
             try:
                 await connection.send_text(json.dumps(message))
             except Exception as e:
