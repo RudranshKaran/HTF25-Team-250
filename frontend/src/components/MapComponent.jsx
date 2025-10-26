@@ -65,6 +65,12 @@ function HeatmapLayer({ densityData }) {
     const heatPoints = [];
     const { grid, center_location, grid_size } = densityData;
     
+    // Safety check: ensure center_location exists
+    if (!center_location || !Array.isArray(center_location) || center_location.length < 2) {
+      console.warn('⚠️ Heatmap: Invalid center_location, skipping update');
+      return;
+    }
+    
     // Find max density for normalization
     let maxDensity = 0;
     grid.forEach(row => {

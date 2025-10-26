@@ -226,6 +226,8 @@ async def density_simulation_task():
                         "avg_density": stadium_data["avg_density"],
                         "max_density": stadium_data["max_density"],
                         "phase": stadium_data["phase"],
+                        "center_location": stadium_data["center"],
+                        "grid_size": 10,
                         "timestamp": multi_zone_data["timestamp"]
                     }
                     latest_density_data = legacy_density_data
