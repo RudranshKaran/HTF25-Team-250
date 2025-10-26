@@ -122,9 +122,15 @@ function App() {
             setMetroData(data);
             break;
           case 'density_update':
-            // Update crowd density data
+            // Update crowd density data (legacy single-zone format)
             console.log(`🔥 Density: Max ${data.max_density}, Avg ${data.avg_density}, Phase: ${data.phase?.toUpperCase()}`);
             setDensityData(data);
+            break;
+          case 'multi_zone_density_update':
+            // Update multi-zone density data (new format)
+            console.log(`🔥 Multi-Zone: ${data.summary?.total_zones || 0} zones monitored`);
+            // Store multi-zone data for future use (currently using legacy format for display)
+            // You can add state management for this later if needed
             break;
           case 'alert':
             // Enhanced alert routing with deduplication and user preferences
