@@ -23,6 +23,11 @@ const CrowdInsightsView = ({
   const [generatingReport, setGeneratingReport] = useState(false);
   const [isGenerating, setIsGenerating] = useState(null); // Tracks which operation is currently generating
 
+  // Helper function to check if crowd density data is populated
+  const isDataPopulated = () => {
+    return multiZoneDensityData && Object.keys(multiZoneDensityData).length > 0;
+  };
+
   // Fetch AI Insights
   const fetchInsights = useCallback(async () => {
     // Prevent concurrent operations
@@ -36,7 +41,7 @@ const CrowdInsightsView = ({
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 130000); // 130 second timeout (backend is 120s)
     
     try {
       const response = await fetch('http://localhost:8000/api/ai/insights', {
@@ -53,7 +58,7 @@ const CrowdInsightsView = ({
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Insights generation timed out after 90 seconds');
+        setError('Insights generation timed out after 130 seconds. Try again with simpler data.');
       } else {
         setError(`Failed to fetch insights: ${err.message}`);
       }
@@ -78,7 +83,7 @@ const CrowdInsightsView = ({
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 130000); // 130 second timeout (backend is 120s)
     
     try {
       const response = await fetch(
@@ -98,7 +103,7 @@ const CrowdInsightsView = ({
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Action plan generation timed out after 90 seconds');
+        setError('Action plan generation timed out after 130 seconds. Try again with simpler data.');
       } else {
         setError(`Failed to fetch action plan: ${err.message}`);
       }
@@ -123,7 +128,7 @@ const CrowdInsightsView = ({
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 130000); // 130 second timeout (backend is 120s)
     
     try {
       const response = await fetch(
@@ -138,7 +143,7 @@ const CrowdInsightsView = ({
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Transportation lookup timed out after 90 seconds');
+        setError('Transportation lookup timed out after 130 seconds. Try again.');
       } else {
         setError(`Failed to fetch transportation: ${err.message}`);
       }
@@ -163,7 +168,7 @@ const CrowdInsightsView = ({
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 130000); // 130 second timeout (backend is 120s)
     
     try {
       const response = await fetch(
@@ -183,7 +188,7 @@ const CrowdInsightsView = ({
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Traffic diversion generation timed out after 90 seconds');
+        setError('Traffic diversion generation timed out after 130 seconds. Try again with simpler data.');
       } else {
         setError(`Failed to fetch traffic diversion: ${err.message}`);
       }
@@ -208,7 +213,7 @@ const CrowdInsightsView = ({
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 130000); // 130 second timeout (backend is 120s)
     
     try {
       const response = await fetch(
@@ -223,7 +228,7 @@ const CrowdInsightsView = ({
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Report generation timed out after 90 seconds');
+        setError('Report generation timed out after 130 seconds. Try again.');
       } else {
         setError(`Failed to generate report: ${err.message}`);
       }
@@ -365,8 +370,8 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No insights available. Click to generate.</p>
             )}
-            <button onClick={fetchInsights} disabled={isGenerating} className="refresh-btn">
-              {isGenerating === 'Insights' ? '⏳ Analyzing...' : '🔄 Generate Insights'}
+            <button onClick={fetchInsights} disabled={isGenerating || !isDataPopulated()} className="refresh-btn">
+              {isGenerating === 'Insights' ? '⏳ Analyzing...' : !isDataPopulated() ? '⏳ Waiting for crowd data...' : '🔄 Generate Insights'}
             </button>
             {isGenerating && isGenerating !== 'Insights' && (
               <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
@@ -432,8 +437,8 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No action plan available. Click to generate.</p>
             )}
-            <button onClick={fetchActionPlan} disabled={isGenerating} className="refresh-btn">
-              {isGenerating === 'Action Plan' ? '⏳ Generating...' : '🔄 Generate Action Plan'}
+            <button onClick={fetchActionPlan} disabled={isGenerating || !isDataPopulated()} className="refresh-btn">
+              {isGenerating === 'Action Plan' ? '⏳ Generating...' : !isDataPopulated() ? '⏳ Waiting for crowd data...' : '🔄 Generate Action Plan'}
             </button>
             {isGenerating && isGenerating !== 'Action Plan' && (
               <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
@@ -519,8 +524,8 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No transportation data available. Click to fetch.</p>
             )}
-            <button onClick={fetchTransportation} disabled={isGenerating} className="refresh-btn">
-              {isGenerating === 'Transportation' ? '⏳ Finding...' : '🔄 Find Transportation'}
+            <button onClick={fetchTransportation} disabled={isGenerating || !isDataPopulated()} className="refresh-btn">
+              {isGenerating === 'Transportation' ? '⏳ Finding...' : !isDataPopulated() ? '⏳ Waiting for crowd data...' : '🔄 Find Transportation'}
             </button>
             {isGenerating && isGenerating !== 'Transportation' && (
               <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
@@ -605,8 +610,8 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
             ) : (
               <p className="no-data">No diversion data available. Click to generate.</p>
             )}
-            <button onClick={fetchTrafficDiversion} disabled={isGenerating} className="refresh-btn">
-              {isGenerating === 'Traffic Diversion' ? '⏳ Calculating...' : '🔄 Generate Diversion Plan'}
+            <button onClick={fetchTrafficDiversion} disabled={isGenerating || !isDataPopulated()} className="refresh-btn">
+              {isGenerating === 'Traffic Diversion' ? '⏳ Calculating...' : !isDataPopulated() ? '⏳ Waiting for crowd data...' : '🔄 Generate Diversion Plan'}
             </button>
             {isGenerating && isGenerating !== 'Traffic Diversion' && (
               <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>
@@ -628,10 +633,10 @@ ${report.recommendations ? report.recommendations.map((r, i) => `${i + 1}. ${r}`
               </select>
               <button 
                 onClick={generateReport} 
-                disabled={isGenerating} 
+                disabled={isGenerating || !isDataPopulated()} 
                 className="refresh-btn"
               >
-                {isGenerating === 'Report' ? '⏳ Generating...' : '📄 Generate Report'}
+                {isGenerating === 'Report' ? '⏳ Generating...' : !isDataPopulated() ? '⏳ Waiting for crowd data...' : '📄 Generate Report'}
               </button>
               {isGenerating && isGenerating !== 'Report' && (
                 <p className="hint-text">⚠️ {isGenerating} is currently generating. Please wait.</p>

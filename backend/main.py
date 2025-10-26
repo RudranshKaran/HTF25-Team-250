@@ -445,11 +445,11 @@ async def get_crowd_insights(data: Optional[dict] = Body(None)):
         try:
             insights = await asyncio.wait_for(
                 asyncio.to_thread(ai_service.generate_crowd_insights, crowd_data),
-                timeout=60.0
+                timeout=120.0
             )
         except asyncio.TimeoutError:
-            print(f"⏱️ Insights generation timed out (60s)")
-            return {"status": "error", "message": "Insights generation timed out"}, 504
+            print(f"⏱️ Insights generation timed out (120s)")
+            return {"status": "error", "message": "Insights generation timed out after 120 seconds"}, 504
         return {"status": "success", "insights": insights}
     except Exception as e:
         print(f"❌ AI Insights Error: {e}")
@@ -468,11 +468,11 @@ async def get_action_plan(zone: str = Query("all"), data: Optional[dict] = Body(
         try:
             action_plan = await asyncio.wait_for(
                 asyncio.to_thread(ai_service.generate_action_plan, crowd_data, alert_zones or [zone]),
-                timeout=60.0
+                timeout=120.0
             )
         except asyncio.TimeoutError:
-            print(f"⏱️ Action plan generation timed out (60s)")
-            return {"status": "error", "message": "Action plan generation timed out"}, 504
+            print(f"⏱️ Action plan generation timed out (120s)")
+            return {"status": "error", "message": "Action plan generation timed out after 120 seconds"}, 504
         
         print(f"✅ Action plan generated successfully")
         return {"status": "success", "action_plan": action_plan}
@@ -503,11 +503,11 @@ async def suggest_traffic_diversion(zone: str = Query("all"), data: Optional[dic
         try:
             diversion = await asyncio.wait_for(
                 asyncio.to_thread(ai_service.suggest_traffic_diversion, zone, crowd_data),
-                timeout=60.0
+                timeout=120.0
             )
         except asyncio.TimeoutError:
-            print(f"⏱️ Traffic diversion generation timed out (60s)")
-            return {"status": "error", "message": "Traffic diversion generation timed out"}, 504
+            print(f"⏱️ Traffic diversion generation timed out (120s)")
+            return {"status": "error", "message": "Traffic diversion generation timed out after 120 seconds"}, 504
         return {"status": "success", "diversion": diversion}
     except Exception as e:
         print(f"❌ Diversion Error: {e}")
@@ -523,11 +523,11 @@ async def generate_crowd_report(period: str = "1hour"):
         try:
             report = await asyncio.wait_for(
                 asyncio.to_thread(ai_service.generate_report, crowd_data, alerts, period),
-                timeout=60.0
+                timeout=120.0
             )
         except asyncio.TimeoutError:
-            print(f"⏱️ Report generation timed out (60s)")
-            return {"status": "error", "message": "Report generation timed out"}, 504
+            print(f"⏱️ Report generation timed out (120s)")
+            return {"status": "error", "message": "Report generation timed out after 120 seconds"}, 504
         return {"status": "success", "report": report}
     except Exception as e:
         print(f"❌ Report Error: {e}")
