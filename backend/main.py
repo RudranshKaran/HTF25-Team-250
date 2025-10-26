@@ -23,6 +23,9 @@ from app.services import (
 from app.services.first_responders_service import (
     get_first_responders_data, format_responders_summary
 )
+from app.services.multi_zone_simulation import (
+    simulate_all_zones_density, check_multi_zone_alerts
+)
 from app.config import config_manager
 
 # Load environment variables
@@ -200,40 +203,67 @@ async def metro_simulation_task():
 
 # Background task for crowd density simulation
 async def density_simulation_task():
-    """Generate and broadcast crowd density data every 30 seconds"""
+    """Generate and broadcast multi-zone crowd density data every 30 seconds"""
     global latest_density_data
     await asyncio.sleep(10)  # Initial delay
     
-    print("Crowd density simulation task started")
+    print("Multi-zone crowd density simulation task started")
     
     while True:
         if manager.active_connections and not config_manager.simulations_paused:
             try:
-                density_data = simulate_crowd_density()
-                latest_density_data = density_data
+                # Get multi-zone density data
+                multi_zone_data = await simulate_all_zones_density()
+                
+                # Also keep single-zone data for backwards compatibility
+                # Use stadium zone as the "main" zone for legacy components
+                if "stadium" in multi_zone_data.get("zones", {}):
+                    stadium_data = multi_zone_data["zones"]["stadium"]
+                    legacy_density_data = {
+                        "type": "density_update",
+                        "grid": stadium_data["grid"],
+                        "hotspots": stadium_data["hotspots"],
+                        "avg_density": stadium_data["avg_density"],
+                        "max_density": stadium_data["max_density"],
+                        "phase": stadium_data["phase"],
+                        "timestamp": multi_zone_data["timestamp"]
+                    }
+                    latest_density_data = legacy_density_data
+                    history_manager.add_density_data(legacy_density_data)
+                    legacy_density_data['trend'] = history_manager.get_density_trend()
+                    legacy_density_data['prediction'] = history_manager.predict_next_alert()
+                    
+                    # Broadcast legacy format first for old components
+                    await manager.broadcast(legacy_density_data)
+                
+                # Broadcast multi-zone data
                 config_manager.increment_message_count()
+                await manager.broadcast(multi_zone_data)
                 
-                # Add to history
-                history_manager.add_density_data(density_data)
+                # Print summary
+                summary = multi_zone_data.get("summary", {})
+                critical = summary.get("critical_zones", [])
+                warning = summary.get("warning_zones", [])
+                status_msg = f"Zones: {summary.get('total_zones', 0)}"
+                if critical:
+                    status_msg += f" | CRITICAL: {', '.join(critical)}"
+                if warning:
+                    status_msg += f" | WARNING: {', '.join(warning)}"
+                print(f"🔥 Multi-Zone Density: {status_msg}")
                 
-                # Add trends to data
-                density_data['trend'] = history_manager.get_density_trend()
-                density_data['prediction'] = history_manager.predict_next_alert()
-                
-                await manager.broadcast(density_data)
-                print(f"🔥 Density broadcast: {format_density_summary(density_data)}")
-                
-                # Check alerts
+                # Check multi-zone alerts
                 if latest_metro_data:
-                    alerts = check_alerts(density_data, latest_metro_data)
+                    alerts = check_multi_zone_alerts(multi_zone_data, latest_metro_data)
                     for alert in alerts:
-                        history_manager.add_alert(alert)  # Add to history
-                        config_manager.increment_alert_count()  # Track stats
+                        history_manager.add_alert(alert)
+                        config_manager.increment_alert_count()
                         await manager.broadcast(alert)
-                        print(f"⚠️  Alert: {alert['level'].upper()} - {alert['message']}")
+                        print(f"⚠️  [{alert.get('zone', 'Unknown')}] {alert['level'].upper()}: {alert['message']}")
                         
             except Exception as e:
                 print(f"❌ Density task error: {e}")
+                import traceback
+                traceback.print_exc()
         
         await asyncio.sleep(30)  # Update every 30 seconds
 

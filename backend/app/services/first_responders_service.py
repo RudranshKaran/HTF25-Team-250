@@ -7,7 +7,7 @@ Based on BMTC bus movement patterns but representing emergency response vehicles
 import random
 from datetime import datetime
 from typing import Dict, List
-from app.utils.constants import BENGALURU_LAT, BENGALURU_LON, STADIUM_LOCATION, METRO_LOCATION
+from app.utils.constants import ZONES
 
 
 # First Responder Types with their properties
@@ -16,42 +16,58 @@ RESPONDER_TYPES = {
         "icon": "🚓",
         "color": "#0066cc",
         "name": "Police Patrol",
-        "count": 6,
+        "count": 8,  # Increased to cover more zones
         "speed_range": (30, 60)
     },
     "ambulance": {
         "icon": "🚑",
         "color": "#ff3333",
         "name": "Ambulance",
-        "count": 4,
+        "count": 6,  # Increased
         "speed_range": (40, 80)
     },
     "fire": {
         "icon": "🚒",
         "color": "#ff6600",
         "name": "Fire Truck",
-        "count": 3,
+        "count": 5,  # Increased
         "speed_range": (35, 70)
     },
     "emergency": {
         "icon": "🚨",
         "color": "#ff00ff",
         "name": "Emergency Response",
-        "count": 2,
+        "count": 3,  # Increased
         "speed_range": (45, 85)
     }
 }
 
-# Strategic patrol zones around Bengaluru
-PATROL_ZONES = [
-    {"name": "Stadium Zone", "lat": STADIUM_LOCATION[0], "lon": STADIUM_LOCATION[1], "priority": "high"},
-    {"name": "Metro Station", "lat": METRO_LOCATION[0], "lon": METRO_LOCATION[1], "priority": "high"},
-    {"name": "City Center", "lat": BENGALURU_LAT, "lon": BENGALURU_LON, "priority": "medium"},
-    {"name": "North Sector", "lat": BENGALURU_LAT + 0.03, "lon": BENGALURU_LON, "priority": "medium"},
-    {"name": "South Sector", "lat": BENGALURU_LAT - 0.03, "lon": BENGALURU_LON, "priority": "medium"},
-    {"name": "East Sector", "lat": BENGALURU_LAT, "lon": BENGALURU_LON + 0.03, "priority": "low"},
-    {"name": "West Sector", "lat": BENGALURU_LAT, "lon": BENGALURU_LON - 0.03, "priority": "low"},
-]
+# Convert ZONES to patrol zones format
+def get_patrol_zones():
+    """Convert constants.ZONES to patrol zones with priority based on capacity"""
+    patrol_zones = []
+    for zone_id, zone_config in ZONES.items():
+        # Assign priority based on zone type and capacity
+        if zone_config["type"] in ["event_venue", "transit"]:
+            priority = "high"
+        elif zone_config["capacity"] > 50000:
+            priority = "high"
+        elif zone_config["capacity"] > 30000:
+            priority = "medium"
+        else:
+            priority = "low"
+        
+        patrol_zones.append({
+            "id": zone_id,
+            "name": zone_config["name"],
+            "lat": zone_config["center"][0],
+            "lon": zone_config["center"][1],
+            "priority": priority,
+            "type": zone_config["type"]
+        })
+    return patrol_zones
+
+PATROL_ZONES = get_patrol_zones()
 
 # Global state to track responder positions (simulates continuous movement)
 _responder_state = {}

@@ -7,7 +7,7 @@ import requests
 import random
 from datetime import datetime
 from typing import Dict, Optional
-from app.utils.constants import BENGALURU_LAT, BENGALURU_LON
+from app.utils.constants import ZONES
 
 
 async def fetch_bmtc_bus_data() -> Optional[Dict]:
@@ -94,21 +94,31 @@ async def fetch_bmtc_bus_data() -> Optional[Dict]:
 def _get_demo_buses() -> Dict:
     """
     Return demo bus data for testing when BMTC API is unavailable
-    Places buses around Bengaluru city center
+    Places buses across all monitored zones in Bengaluru
     """
     demo_buses = []
-    base_routes = ["356", "500", "G4", "335E", "KIA-9", "41C", "201A", "283D"]
+    base_routes = ["356", "500", "G4", "335E", "KIA-9", "41C", "201A", "283D", "K-2", "V-500", "AS-1", "MF-1"]
     
+    # Convert zones to list for easier access
+    zone_list = list(ZONES.values())
+    
+    # Distribute buses across all zones
     for i, route in enumerate(base_routes):
-        lat_offset = random.uniform(-0.05, 0.05)
-        lon_offset = random.uniform(-0.05, 0.05)
+        # Assign bus to a zone (cycle through zones)
+        zone = zone_list[i % len(zone_list)]
+        
+        # Place bus near zone center with some random offset (within zone radius)
+        radius_offset = zone["radius"] / 111000  # Convert meters to degrees (approx)
+        lat_offset = random.uniform(-radius_offset, radius_offset)
+        lon_offset = random.uniform(-radius_offset, radius_offset)
         
         demo_buses.append({
             "id": f"KA01AB{1000 + i}",
             "route": route,
-            "lat": BENGALURU_LAT + lat_offset,
-            "lon": BENGALURU_LON + lon_offset,
+            "lat": zone["center"][0] + lat_offset,
+            "lon": zone["center"][1] + lon_offset,
             "speed": random.randint(10, 40),
+            "zone": zone["name"],
             "timestamp": datetime.now().isoformat()
         })
     
