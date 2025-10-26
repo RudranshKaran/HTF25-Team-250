@@ -55,6 +55,42 @@ class AIInferenceService:
             print(f"❌ AI Inference Error: {e}")
             return self._generate_fallback_insights(crowd_data)
     
+    def generate_zone_specific_plan(self, crowd_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate detailed zone-specific plans with analysis, risk assessment, and reasoning
+        
+        Args:
+            crowd_data: Current multi-zone density data
+            
+        Returns:
+            Dictionary with comprehensive zone-specific analysis and action plans
+        """
+        try:
+            if not self.model:
+                return self._generate_fallback_zone_specific_plan(crowd_data)
+            
+            zones = crowd_data.get('zones', {})
+            zone_plans = {}
+            
+            # Generate plan for each zone
+            for zone_id, zone_data in zones.items():
+                prompt = self._format_zone_specific_prompt(zone_id, zone_data, crowd_data)
+                response = self.model.generate_content(prompt)
+                
+                zone_plan = self._parse_zone_specific_response(response.text, zone_id)
+                zone_plans[zone_id] = zone_plan
+            
+            return {
+                'zone_specific_plans': zone_plans,
+                'total_zones_analyzed': len(zones),
+                'timestamp': datetime.now().isoformat(),
+                'model': 'gemini-pro'
+            }
+            
+        except Exception as e:
+            print(f"❌ Zone-Specific Plan Generation Error: {e}")
+            return self._generate_fallback_zone_specific_plan(crowd_data)
+    
     def generate_action_plan(self, crowd_data: Dict[str, Any], alert_zones: List[str]) -> Dict[str, Any]:
         """
         Generate actionable recommendations to ease crowd and manage flow
@@ -211,6 +247,87 @@ class AIInferenceService:
     
     # ===== PROMPT FORMATTING =====
     
+    def _format_zone_specific_prompt(self, zone_id: str, zone_data: Dict[str, Any], 
+                                     all_crowd_data: Dict[str, Any]) -> str:
+        """Format detailed zone-specific analysis prompt for Gemini API"""
+        hotspots = zone_data.get('hotspots', [])
+        avg_density = zone_data.get('avg_density', 0)
+        max_density = zone_data.get('max_density', 0)
+        phase = zone_data.get('phase', 'unknown')
+        flow_rate = zone_data.get('flow_rate', 0)
+        capacity = zone_data.get('capacity', 100)
+        
+        # Calculate capacity utilization
+        capacity_utilization = (avg_density / capacity * 100) if capacity > 0 else 0
+        
+        hotspots_info = "\n".join([f"  - {spot.get('name', 'Unknown')}: {spot.get('density', 0):.1f}% density" 
+                                   for spot in hotspots[:5]])
+        
+        prompt = f"""
+You are an expert urban crowd management strategist. Analyze this SPECIFIC ZONE in detail:
+
+ZONE: {zone_id}
+├─ Current Average Density: {avg_density:.1f}%
+├─ Peak Density: {max_density:.1f}%
+├─ Zone Capacity: {capacity}%
+├─ Capacity Utilization: {capacity_utilization:.1f}%
+├─ Flow Phase: {phase}
+├─ Flow Rate: {flow_rate} people/min
+└─ Top Hotspots:
+{hotspots_info if hotspots_info else "  - No specific hotspots detected"}
+
+TASK: Provide a COMPREHENSIVE, DETAILED zone-specific analysis and action plan.
+
+REQUIRED OUTPUT (format as JSON with ALL these fields):
+{{
+  "zone_id": "{zone_id}",
+  "status": "critical|warning|normal",
+  
+  "analysis": {{
+    "current_situation": "Detailed description of current crowd conditions in this zone",
+    "risk_factors": ["Risk factor 1 with explanation", "Risk factor 2 with explanation"],
+    "capacity_assessment": "Analysis of current capacity utilization and implications",
+    "bottleneck_identification": "Specific bottlenecks and why they are forming",
+    "trend": "Expected trend in next 15, 30, 60 minutes"
+  }},
+  
+  "action_plan": {{
+    "crowd_management": {{
+      "immediate_actions": [
+        {{"action": "action 1", "why": "reason this will help", "expected_outcome": "expected result"}}
+      ],
+      "short_term_actions": [
+        {{"action": "action 1", "why": "reason this will help", "duration": "estimated time"}}
+      ],
+      "resources_needed": ["Resource 1 with quantity", "Resource 2 with quantity"]
+    }},
+    "transportation_routing": {{
+      "recommended_routes": ["Route 1 (capacity, estimated time)", "Route 2 (capacity, estimated time)"],
+      "public_transport": {{"metro": ["station 1", "station 2"], "bus": ["route 1", "route 2"]}},
+      "ride_hailing": "Recommendation for ride-hailing services",
+      "why_routing": "Detailed reason for this routing strategy"
+    }},
+    "traffic_diversion": {{
+      "primary_diversion": "Primary alternate route with capacity impact",
+      "secondary_diversion": "Secondary route if primary is saturated",
+      "roads_to_restrict": ["Road 1", "Road 2"],
+      "expected_relief": "Percentage expected density reduction",
+      "why_diversion": "Reason this diversion strategy will work for this zone"
+    }}
+  }},
+  
+  "metrics": {{
+    "estimated_duration_to_stabilize": "Estimated time in minutes",
+    "expected_density_reduction": "Percentage reduction",
+    "resource_efficiency": "Efficiency score 0-100",
+    "monitoring_priorities": ["Priority 1", "Priority 2", "Priority 3"]
+  }}
+}}
+
+Be specific to {zone_id}'s characteristics. Provide concrete, actionable recommendations with clear reasoning.
+"""
+        return prompt
+    
     def _format_crowd_prompt(self, crowd_data: Dict[str, Any]) -> str:
         """Format crowd data into a prompt for Gemini API"""
         zones_info = []
@@ -314,6 +431,36 @@ Format as JSON with keys: summary, peak_times, problem_areas, recommendations, e
     
     # ===== RESPONSE PARSING =====
     
+    def _parse_zone_specific_response(self, response_text: str, zone_id: str) -> Dict[str, Any]:
+        """Parse zone-specific analysis response"""
+        try:
+            # Try to find JSON in response
+            if '{' in response_text and '}' in response_text:
+                json_str = response_text[response_text.find('{'):response_text.rfind('}')+1]
+                parsed = json.loads(json_str)
+                # Ensure all required fields are present
+                if 'zone_id' not in parsed:
+                    parsed['zone_id'] = zone_id
+                return parsed
+            # Fallback to structured format if JSON parsing fails
+            return {
+                'zone_id': zone_id,
+                'status': 'normal',
+                'analysis': {'current_situation': response_text},
+                'action_plan': {},
+                'parsed': False
+            }
+        except Exception as e:
+            print(f"Error parsing zone-specific response: {e}")
+            return {
+                'zone_id': zone_id,
+                'status': 'normal',
+                'analysis': {'current_situation': response_text},
+                'action_plan': {},
+                'parsed': False,
+                'error': str(e)
+            }
+    
     def _parse_ai_response(self, response_text: str) -> Dict[str, Any]:
         """Parse AI response and convert to JSON"""
         try:
@@ -356,6 +503,75 @@ Format as JSON with keys: summary, peak_times, problem_areas, recommendations, e
             return {'report': response_text}
     
     # ===== FALLBACK IMPLEMENTATIONS (when Gemini API is not available) =====
+    
+    def _generate_fallback_zone_specific_plan(self, crowd_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate fallback zone-specific plans when AI is unavailable"""
+        zones = crowd_data.get('zones', {})
+        zone_plans = {}
+        
+        for zone_id, zone_data in zones.items():
+            avg_density = zone_data.get('avg_density', 0)
+            
+            # Determine status based on density
+            if avg_density > 80:
+                status = 'critical'
+            elif avg_density > 50:
+                status = 'warning'
+            else:
+                status = 'normal'
+            
+            zone_plans[zone_id] = {
+                'zone_id': zone_id,
+                'status': status,
+                'analysis': {
+                    'current_situation': f"Zone {zone_id} is at {avg_density:.1f}% capacity",
+                    'risk_factors': [
+                        'High crowd concentration in specific areas',
+                        'Limited alternative exit routes'
+                    ],
+                    'capacity_assessment': f'Operating at {avg_density:.1f}% of zone capacity',
+                    'bottleneck_identification': 'Primary exits showing congestion',
+                    'trend': 'Monitor for continued density increase'
+                },
+                'action_plan': {
+                    'crowd_management': {
+                        'immediate_actions': [
+                            {'action': 'Deploy crowd control staff', 'why': 'Manage flow and prevent incidents', 'expected_outcome': 'Better crowd organization'},
+                            {'action': 'Activate alternative exits', 'why': 'Distribute crowd to multiple routes', 'expected_outcome': '15-20% density reduction'}
+                        ],
+                        'short_term_actions': [
+                            {'action': 'Deploy additional signage', 'why': 'Guide crowd to less congested areas', 'duration': '5-10 minutes'}
+                        ],
+                        'resources_needed': ['2-3 security personnel', 'Crowd control barriers', 'Digital signage']
+                    },
+                    'transportation_routing': {
+                        'recommended_routes': ['Primary exit (capacity 60%)', 'Secondary exit (capacity 75%)'],
+                        'public_transport': {'metro': ['Nearest metro station'], 'bus': ['Available bus routes']},
+                        'ride_hailing': 'Encouraged for dispersal',
+                        'why_routing': 'Distributes crowd across multiple transportation modes'
+                    },
+                    'traffic_diversion': {
+                        'primary_diversion': 'Via alternate arterial road',
+                        'secondary_diversion': 'Via secondary connector',
+                        'roads_to_restrict': ['Direct zone access during peak times'],
+                        'expected_relief': '20-25% density reduction',
+                        'why_diversion': 'Reduces bottleneck at primary exit'
+                    }
+                },
+                'metrics': {
+                    'estimated_duration_to_stabilize': '30 minutes',
+                    'expected_density_reduction': '25-30%',
+                    'resource_efficiency': 75,
+                    'monitoring_priorities': ['Exit flow rate', 'Hotspot density', 'Incident reports']
+                }
+            }
+        
+        return {
+            'zone_specific_plans': zone_plans,
+            'total_zones_analyzed': len(zones),
+            'timestamp': datetime.now().isoformat(),
+            'model': 'fallback'
+        }
     
     def _generate_fallback_insights(self, crowd_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate fallback insights when AI is unavailable"""

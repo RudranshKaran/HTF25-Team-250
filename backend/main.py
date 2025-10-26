@@ -469,6 +469,28 @@ async def generate_crowd_report(period: str = "1hour"):
         print(f"❌ Report Error: {e}")
         return {"status": "error", "message": str(e)}, 500
 
+@app.post("/api/ai/zone-specific-plan")
+async def get_zone_specific_plan(data: dict = None):
+    """
+    Generate detailed zone-specific plans with analysis, risk assessment, and reasoning
+    Returns comprehensive action plans for each zone including:
+    - Detailed analysis with risk factors and bottleneck identification
+    - Crowd management recommendations with reasoning
+    - Transportation routing strategies
+    - Traffic diversion plans
+    - Expected outcomes and monitoring priorities
+    """
+    try:
+        crowd_data = data or latest_density_data or {}
+        if not crowd_data:
+            return {"status": "warning", "message": "No crowd data available", "plan": {}}
+        
+        zone_plan = ai_service.generate_zone_specific_plan(crowd_data)
+        return {"status": "success", "zone_specific_plan": zone_plan}
+    except Exception as e:
+        print(f"❌ Zone-Specific Plan Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time bidirectional communication"""
