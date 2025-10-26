@@ -7,6 +7,7 @@ const Sidebar = ({ activeSection, onNavigate }) => {
     { id: 'analytics', icon: '📊', label: 'Analytics', shortcut: '2' },
     { id: 'alerts', icon: '🚨', label: 'Alerts & History', shortcut: '3' },
     { id: 'fleet', icon: '🚍', label: 'Fleet Management', shortcut: '4' },
+    { id: 'insights', icon: '🤖', label: 'AI Insights', shortcut: '6' },
     { id: 'control', icon: '⚙️', label: 'System Control', shortcut: '5' }
   ];
 
