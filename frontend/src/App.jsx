@@ -20,6 +20,19 @@ import CrowdRiskIndicator from './components/CrowdRiskIndicator';
 import InsightsDock from './components/InsightsDock';
 import audioManager from './utils/audioManager';
 import keyboardManager from './utils/keyboardShortcuts';
+
+// New Layout Components
+import Sidebar from './components/layout/Sidebar';
+import Breadcrumb from './components/layout/Breadcrumb';
+import KeyboardShortcutsPanel from './components/layout/KeyboardShortcutsPanel';
+
+// New View Components
+import LiveOperationsView from './components/views/LiveOperationsView';
+import AnalyticsDashboardView from './components/views/AnalyticsDashboardView';
+import AlertsMonitoringView from './components/views/AlertsMonitoringView';
+import FleetManagementView from './components/views/FleetManagementView';
+import SystemControlView from './components/views/SystemControlView';
+
 import './App.css';
 
 function App() {
@@ -49,6 +62,10 @@ function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasNewCritical, setHasNewCritical] = useState(false);
   const alertDedupeMap = useRef(new Map()); // Track recent alerts for deduplication
+
+  // New Dashboard Layout State
+  const [activeSection, setActiveSection] = useState('operations'); // operations, analytics, alerts, fleet, control
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
   // WebSocket connection logic
   const connectWebSocket = useCallback(() => {
@@ -379,15 +396,15 @@ function App() {
     }, 'Refresh Data');
     
     keyboardManager.register('?', 'shift', () => {
-      const shortcuts = keyboardManager.getAllShortcuts();
-      let message = '⌨️ Keyboard Shortcuts:\n';
-      shortcuts.forEach(s => {
-        const mod = s.modifier ? `${s.modifier}+` : '';
-        message += `\n${mod}${s.key.toUpperCase()}: ${s.description}`;
-      });
-      console.log(message);
-      notify.info('Keyboard shortcuts logged to console', 5000);
+      setShowKeyboardShortcuts(true);
     }, 'Show Shortcuts');
+
+    // NEW: Navigation shortcuts for dashboard sections
+    keyboardManager.register('1', '', () => setActiveSection('operations'), 'Go to Live Operations');
+    keyboardManager.register('2', '', () => setActiveSection('analytics'), 'Go to Analytics');
+    keyboardManager.register('3', '', () => setActiveSection('alerts'), 'Go to Alerts');
+    keyboardManager.register('4', '', () => setActiveSection('fleet'), 'Go to Fleet Management');
+    keyboardManager.register('5', '', () => setActiveSection('control'), 'Go to System Control');
     
     // TEST: Generate sample notifications (Press 't' key)
     keyboardManager.register('t', '', () => {
@@ -510,64 +527,16 @@ function App() {
     }
   };
 
+  // Navigate to section
+  const navigateToSection = useCallback((section) => {
+    setActiveSection(section);
+    notify.info(`Navigated to ${section.charAt(0).toUpperCase() + section.slice(1)}`, 2000);
+  }, []);
+
   return (
     <div className="App">
-      {/* Notification Center */}
+      {/* Global Overlays */}
       <NotificationCenter />
-      
-      {/* Consolidated Insights Dock (Analytics, Logs, Performance) */}
-      <InsightsDock 
-        densityData={densityData}
-        metroData={metroData}
-        connectionStatus={connectionStatus}
-        messagesReceived={messageCount}
-      />
-
-      {/* Control Panel */}
-      <ControlPanel onSettingsUpdate={fetchSettings} />
-      
-      {/* Legacy floating panels removed in favor of InsightsDock */}
-      
-      {/* Quick Actions */}
-      <QuickActions onAction={handleQuickAction} />
-      
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-left">
-          <h1>🚨 Crowd Safety Intelligence System</h1>
-          <p className="subtitle">Mission Control Dashboard - Bengaluru</p>
-        </div>
-        <div className="header-center">
-          {/* Crowd Risk Indicator */}
-          <CrowdRiskIndicator densityData={densityData} />
-        </div>
-        <div className="header-right">
-          {/* Mode Toggle */}
-          <ModeToggle />
-          
-          {/* Notification Bell */}
-          <NotificationBell 
-            unreadCount={unreadCount}
-            onClick={toggleNotificationHub}
-            hasNewCritical={hasNewCritical}
-          />
-          
-          <div className={`status-indicator ${connectionStatus}`}>
-            <span className="status-dot"></span>
-            <span className="status-text">
-              {connectionStatus === 'connected' ? 'LIVE' : 
-               connectionStatus === 'connecting' ? 'CONNECTING...' : 
-               'DISCONNECTED'}
-            </span>
-          </div>
-          
-          {lastUpdate && (
-            <span className="last-update">Last Update: {lastUpdate}</span>
-          )}
-        </div>
-      </header>
-
-      {/* Notification Hub */}
       <NotificationHub 
         isOpen={notificationHubOpen}
         onClose={() => setNotificationHubOpen(false)}
@@ -576,122 +545,114 @@ function App() {
         onDismiss={dismissNotification}
         onViewOnMap={viewAlertOnMap}
       />
-
-      {/* Alert Notifications */}
       <AlertBanner 
         alerts={alerts} 
         onDismiss={dismissNotification}
       />
-
-      {/* Main content area */}
-      <div className="main-content">
-        {/* Map component */}
-        <div className="map-container">
-          <MapComponent busData={busData} densityData={densityData} firstResponders={firstResponders} />
+      <KeyboardShortcutsPanel 
+        isOpen={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
+      
+      {/* Legacy Floating Panels (hidden on most sections, shown only when needed) */}
+      {activeSection === 'operations' && (
+        <>
+          <InsightsDock 
+            densityData={densityData}
+            metroData={metroData}
+            connectionStatus={connectionStatus}
+            messagesReceived={messageCount}
+          />
+          <QuickActions onAction={handleQuickAction} />
+        </>
+      )}
+      
+      {/* Slim Header */}
+      <header className="app-header-slim">
+        <div className="header-title">
+          <h1>🚨 CSIS</h1>
+          <span className="header-subtitle">Crowd Safety Intelligence</span>
         </div>
+        <div className="header-actions">
+          <ModeToggle />
+          <NotificationBell 
+            unreadCount={unreadCount}
+            onClick={toggleNotificationHub}
+            hasNewCritical={hasNewCritical}
+          />
+          <div className={`status-indicator ${connectionStatus}`}>
+            <span className="status-dot"></span>
+            <span className="status-text">
+              {connectionStatus === 'connected' ? 'LIVE' : 
+               connectionStatus === 'connecting' ? 'CONNECTING...' : 
+               'DISCONNECTED'}
+            </span>
+          </div>
+        </div>
+      </header>
 
-        {/* Side panel */}
-        <div className="side-panel">
-          {/* Weather Widget */}
-          <div className="panel-section weather-section">
-            <WeatherWidget weatherData={weatherData} />
-          </div>
-          
-          {/* Metro Flow Widget */}
-          <div className="panel-section metro-section">
-            <MetroFlowWidget metroData={metroData} />
-          </div>
-          
-          <div className="panel-section">
-            <h3>System Status</h3>
-            <div className="status-grid">
-              <div className="status-item">
-                <span className="label">WebSocket:</span>
-                <span className={`value ${connectionStatus}`}>
-                  {connectionStatus.toUpperCase()}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="label">Messages:</span>
-                <span className="value">{messages.length}</span>
-              </div>
-              <div className="status-item">
-                <span className="label">Active Buses:</span>
-                <span className="value bus-count">{busCount}</span>
-              </div>
-              <div className="status-item">
-                <span className="label">Weather:</span>
-                <span className="value">
-                  {weatherData ? `${weatherData.temperature}°C` : 'Loading...'}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="label">Max Density:</span>
-                <span className="value density-value">
-                  {densityData ? (
-                    <>
-                      {densityData.max_density} {getTrendEmoji(densityData.trend)}
-                    </>
-                  ) : '-'}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="label">Crowd Phase:</span>
-                <span className={`value phase-${densityData?.phase || 'unknown'}`}>
-                  {densityData?.phase ? densityData.phase.toUpperCase() : 'INITIALIZING'}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="label">Active Alerts:</span>
-                <span className={`value ${alerts.length > 0 ? 'alert-active' : ''}`}>
-                  {alerts.length}
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* New Dashboard Layout */}
+      <div className="dashboard-layout">
+        {/* Sidebar Navigation */}
+        <Sidebar 
+          activeSection={activeSection}
+          onNavigate={navigateToSection}
+        />
 
-          <div className="panel-section">
-            <h3>Controls</h3>
-            <button 
-              className="export-button" 
-              onClick={exportData}
-              disabled={connectionStatus !== 'connected'}
-            >
-              📥 Export Data
-            </button>
-            <button 
-              className="test-button" 
-              onClick={sendTestMessage}
-              disabled={connectionStatus !== 'connected'}
-            >
-              🔔 Send Test Message
-            </button>
-          </div>
+        {/* Main Dashboard Content */}
+        <div className="dashboard-main">
+          {/* Breadcrumb Navigation */}
+          <Breadcrumb activeSection={activeSection} />
 
-          {/* Alert History */}
-          <div className="panel-section alert-history-section">
-            <AlertHistory />
-          </div>
+          {/* Section Content - Conditional Rendering */}
+          <div className="section-content">
+            {activeSection === 'operations' && (
+              <LiveOperationsView 
+                busData={busData}
+                densityData={densityData}
+                firstResponders={firstResponders}
+                weatherData={weatherData}
+                metroData={metroData}
+                alerts={alerts}
+                messages={messages}
+              />
+            )}
 
-          <div className="panel-section">
-            <h3>Recent Messages</h3>
-            <div className="messages-log">
-              {messages.length === 0 ? (
-                <p className="no-messages">No messages yet...</p>
-              ) : (
-                messages.slice().reverse().map((msg, idx) => (
-                  <div key={idx} className="message-item">
-                    <span className="message-type">[{msg.type}]</span>
-                    <span className="message-text">{msg.message || JSON.stringify(msg)}</span>
-                  </div>
-                ))
-              )}
-            </div>
+            {activeSection === 'analytics' && (
+              <AnalyticsDashboardView 
+                densityData={densityData}
+                metroData={metroData}
+                connectionStatus={connectionStatus}
+                messagesReceived={messageCount}
+              />
+            )}
+
+            {activeSection === 'alerts' && (
+              <AlertsMonitoringView 
+                alerts={alerts}
+                allNotifications={allNotifications}
+              />
+            )}
+
+            {activeSection === 'fleet' && (
+              <FleetManagementView 
+                busData={busData}
+                metroData={metroData}
+                firstResponders={firstResponders}
+              />
+            )}
+
+            {activeSection === 'control' && (
+              <SystemControlView 
+                onSettingsUpdate={fetchSettings}
+                connectionStatus={connectionStatus}
+                onExport={exportData}
+                onTestMessage={sendTestMessage}
+              />
+            )}
           </div>
         </div>
       </div>
-
-      {/* Bottom analytics panel removed in favor of InsightsDock */}
     </div>
   );
 }
