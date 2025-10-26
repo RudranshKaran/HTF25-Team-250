@@ -26,7 +26,8 @@ def initialize_zone_states():
             
             # Base intensity correlates with zone capacity
             capacity_factor = zone_config["capacity"] / 50000  # Normalize
-            base_intensity = random.randint(10, int(30 * capacity_factor))
+            max_intensity = max(10, int(30 * capacity_factor))  # Ensure min value is at least 10
+            base_intensity = random.randint(10, max_intensity)
             
             _zone_states[zone_id] = {
                 'zone_id': zone_id,
