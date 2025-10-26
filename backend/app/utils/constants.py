@@ -12,7 +12,7 @@ BENGALURU_LON = 77.5946
 STADIUM_LOCATION = [12.9789, 77.5993]
 METRO_LOCATION = [12.9756, 77.6057]
 
-# Multi-Zone Configuration
+# Multi-Zone Configuration (Bangalore Metro Line Colors)
 ZONES = {
     "stadium": {
         "id": "stadium",
@@ -22,7 +22,7 @@ ZONES = {
         "capacity": 40000,
         "type": "event_venue",
         "icon": "🏟️",
-        "color": "#ff4444",
+        "color": "#CB0020",  # Red Line
         "monitoring": True
     },
     "mg_road_metro": {
@@ -33,7 +33,7 @@ ZONES = {
         "capacity": 15000,
         "type": "transit",
         "icon": "🚇",
-        "color": "#4169e1",
+        "color": "#28458C",  # Blue Line
         "monitoring": True
     },
     "majestic": {
@@ -44,7 +44,7 @@ ZONES = {
         "capacity": 50000,
         "type": "transit",
         "icon": "🚌",
-        "color": "#ff8c00",
+        "color": "#FF6300",  # Orange Line
         "monitoring": True
     },
     "electronic_city": {
@@ -55,7 +55,7 @@ ZONES = {
         "capacity": 100000,
         "type": "commercial",
         "icon": "💼",
-        "color": "#32cd32",
+        "color": "#009933",  # Green Line
         "monitoring": True
     },
     "koramangala": {
@@ -66,7 +66,7 @@ ZONES = {
         "capacity": 60000,
         "type": "mixed",
         "icon": "🛍️",
-        "color": "#ffd700",
+        "color": "#FFDF00",  # Yellow Line
         "monitoring": True
     },
     "indiranagar": {
@@ -77,7 +77,7 @@ ZONES = {
         "capacity": 45000,
         "type": "mixed",
         "icon": "🏠",
-        "color": "#9370db",
+        "color": "#8C2877",  # Purple Line
         "monitoring": True
     },
     "cubbon_park": {
@@ -88,7 +88,7 @@ ZONES = {
         "capacity": 30000,
         "type": "tourist",
         "icon": "🏛️",
-        "color": "#20b2aa",
+        "color": "#FF49A7",  # Pink Line
         "monitoring": True
     }
 }

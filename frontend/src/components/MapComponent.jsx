@@ -184,15 +184,15 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
   const [hotspots, setHotspots] = useState([]);
   const [responders, setResponders] = useState([]);
 
-  // Zone definitions
+  // Zone definitions with Metro Line colors
   const zones = {
-    stadium: { center: [12.9789, 77.5993], radius: 1000, color: '#ff4444', name: 'Chinnaswamy Stadium' },
-    mg_road_metro: { center: [12.9756, 77.6057], radius: 500, color: '#4169e1', name: 'MG Road Metro' },
-    majestic: { center: [12.9767, 77.5713], radius: 800, color: '#ff8c00', name: 'Majestic Bus Stand' },
-    electronic_city: { center: [12.8450, 77.6628], radius: 2000, color: '#32cd32', name: 'Electronic City' },
-    koramangala: { center: [12.9352, 77.6245], radius: 1500, color: '#ffd700', name: 'Koramangala' },
-    indiranagar: { center: [12.9784, 77.6408], radius: 1200, color: '#9370db', name: 'Indiranagar' },
-    cubbon_park: { center: [12.9762, 77.5929], radius: 1000, color: '#20b2aa', name: 'Cubbon Park Area' }
+    stadium: { center: [12.9789, 77.5993], radius: 1000, color: '#CB0020', name: 'Chinnaswamy Stadium' }, // Red Line
+    mg_road_metro: { center: [12.9756, 77.6057], radius: 500, color: '#28458C', name: 'MG Road Metro' }, // Blue Line
+    majestic: { center: [12.9767, 77.5713], radius: 800, color: '#FF6300', name: 'Majestic Bus Stand' }, // Orange Line
+    electronic_city: { center: [12.8450, 77.6628], radius: 2000, color: '#009933', name: 'Electronic City' }, // Green Line
+    koramangala: { center: [12.9352, 77.6245], radius: 1500, color: '#FFDF00', name: 'Koramangala' }, // Yellow Line
+    indiranagar: { center: [12.9784, 77.6408], radius: 1200, color: '#8C2877', name: 'Indiranagar' }, // Purple Line
+    cubbon_park: { center: [12.9762, 77.5929], radius: 1000, color: '#FF49A7', name: 'Cubbon Park Area' } // Pink Line
   };
 
   // Update buses when new data arrives
