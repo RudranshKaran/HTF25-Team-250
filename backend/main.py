@@ -53,11 +53,13 @@ class ConnectionManager:
     
     def __init__(self):
         self.active_connections: Set[WebSocket] = set()
+        self._lock = asyncio.Lock()
     
     async def connect(self, websocket: WebSocket):
         """Accept and register a new WebSocket connection"""
         await websocket.accept()
-        self.active_connections.add(websocket)
+        async with self._lock:
+            self.active_connections.add(websocket)
         print(f"Client connected. Total connections: {len(self.active_connections)}")
         
         # Send welcome message to the newly connected client
@@ -67,9 +69,10 @@ class ConnectionManager:
             "timestamp": datetime.now().isoformat()
         }, websocket)
     
-    def disconnect(self, websocket: WebSocket):
+    async def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection"""
-        self.active_connections.discard(websocket)
+        async with self._lock:
+            self.active_connections.discard(websocket)
         print(f"Client disconnected. Total connections: {len(self.active_connections)}")
     
     async def send_personal_message(self, message: dict, websocket: WebSocket):
@@ -82,17 +85,29 @@ class ConnectionManager:
     async def broadcast(self, message: dict):
         """Broadcast a message to all connected clients"""
         disconnected = set()
-        # Create a copy to avoid "Set changed size during iteration" error
-        for connection in list(self.active_connections):
+        # Create a snapshot of connections under lock to ensure thread-safe iteration
+        async with self._lock:
+            connections_snapshot = list(self.active_connections)
+        
+        # Send to all connections (without lock to allow concurrent operations)
+        for connection in connections_snapshot:
             try:
                 await connection.send_text(json.dumps(message))
+            except RuntimeError as e:
+                # Handle "websocket.close" and other closed connection errors
+                if "websocket.close" in str(e) or "websocket.send" in str(e) or "already completed" in str(e):
+                    disconnected.add(connection)
+                else:
+                    print(f"Error broadcasting to client: {e}")
             except Exception as e:
                 print(f"Error broadcasting to client: {e}")
                 disconnected.add(connection)
         
         # Clean up disconnected clients
-        for conn in disconnected:
-            self.active_connections.discard(conn)
+        if disconnected:
+            async with self._lock:
+                for conn in disconnected:
+                    self.active_connections.discard(conn)
 
 # Initialize connection manager
 manager = ConnectionManager()
@@ -415,7 +430,8 @@ async def get_crowd_insights(data: dict = None):
     """Generate AI insights for crowd management"""
     try:
         crowd_data = data or latest_density_data or {}
-        insights = ai_service.generate_crowd_insights(crowd_data)
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        insights = await asyncio.to_thread(ai_service.generate_crowd_insights, crowd_data)
         return {"status": "success", "insights": insights}
     except Exception as e:
         print(f"❌ AI Insights Error: {e}")
@@ -429,7 +445,8 @@ async def get_action_plan(zone: str = "all", data: dict = None):
         summary = crowd_data.get('summary', {})
         alert_zones = summary.get('critical_zones', []) + summary.get('warning_zones', [])
         
-        action_plan = ai_service.generate_action_plan(crowd_data, alert_zones or [zone])
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        action_plan = await asyncio.to_thread(ai_service.generate_action_plan, crowd_data, alert_zones or [zone])
         return {"status": "success", "action_plan": action_plan}
     except Exception as e:
         print(f"❌ Action Plan Error: {e}")
@@ -440,7 +457,8 @@ async def get_nearest_transportation(zone: str = "all"):
     """Get nearest transportation options"""
     try:
         crowd_data = latest_density_data or {}
-        transport = ai_service.find_nearest_transportation(zone, crowd_data)
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        transport = await asyncio.to_thread(ai_service.find_nearest_transportation, zone, crowd_data)
         return {"status": "success", "transportation": transport}
     except Exception as e:
         print(f"❌ Transportation Error: {e}")
@@ -451,7 +469,8 @@ async def suggest_traffic_diversion(zone: str = "all", data: dict = None):
     """Get traffic diversion recommendations"""
     try:
         crowd_data = data or latest_density_data or {}
-        diversion = ai_service.suggest_traffic_diversion(zone, crowd_data)
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        diversion = await asyncio.to_thread(ai_service.suggest_traffic_diversion, zone, crowd_data)
         return {"status": "success", "diversion": diversion}
     except Exception as e:
         print(f"❌ Diversion Error: {e}")
@@ -463,7 +482,8 @@ async def generate_crowd_report(period: str = "1hour"):
     try:
         crowd_data = latest_density_data or {}
         alerts = history_manager.get_history_summary().get('alerts', [])
-        report = ai_service.generate_report(crowd_data, alerts, period)
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        report = await asyncio.to_thread(ai_service.generate_report, crowd_data, alerts, period)
         return {"status": "success", "report": report}
     except Exception as e:
         print(f"❌ Report Error: {e}")
@@ -485,7 +505,8 @@ async def get_zone_specific_plan(data: dict = None):
         if not crowd_data:
             return {"status": "warning", "message": "No crowd data available", "plan": {}}
         
-        zone_plan = ai_service.generate_zone_specific_plan(crowd_data)
+        # Run blocking AI call in thread pool to avoid blocking event loop
+        zone_plan = await asyncio.to_thread(ai_service.generate_zone_specific_plan, crowd_data)
         return {"status": "success", "zone_specific_plan": zone_plan}
     except Exception as e:
         print(f"❌ Zone-Specific Plan Error: {e}")
@@ -515,11 +536,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 pass
                 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)
         print("Client disconnected normally")
     except Exception as e:
         print(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)
 
 @app.on_event("startup")
 async def startup_event():
