@@ -230,7 +230,17 @@ function App() {
     
     alertDedupeMap.current.set(alertKey, { id: notification.id, timestamp: now });
     
-    setAllNotifications(prev => [notification, ...prev]);
+    setAllNotifications(prev => {
+      const updated = [notification, ...prev];
+      // Auto-remove notifications older than 10 minutes
+      const tenMinutesAgo = now - 600000;
+      const filtered = updated.filter(n => {
+        const notifTime = new Date(n.timestamp).getTime();
+        return notifTime > tenMinutesAgo;
+      });
+      // Limit to 50 notifications max
+      return filtered.slice(0, 50);
+    });
     setUnreadCount(prev => prev + 1);
     
     // Set critical flag if critical alert
@@ -245,6 +255,22 @@ function App() {
         alertDedupeMap.current.delete(key);
       }
     });
+    
+    // Auto-mark notifications older than 2 minutes as read
+    setTimeout(() => {
+      setAllNotifications(prev => 
+        prev.map(notif => {
+          const notifTime = new Date(notif.timestamp).getTime();
+          const age = now - notifTime;
+          // Auto-read if older than 2 minutes and same alert is still coming
+          if (!notif.read && age > 120000) {
+            setUnreadCount(c => Math.max(0, c - 1));
+            return { ...notif, read: true };
+          }
+          return notif;
+        })
+      );
+    }, 2000);
   }, []);
 
   // Mark notifications as read
