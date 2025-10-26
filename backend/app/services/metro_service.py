@@ -1,11 +1,11 @@
 """
 Metro Flow Simulation Service
-Simulates passenger flow at metro stations
+Simulates passenger flow at ALL metro stations
 """
 
 import random
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 from app.utils.constants import METRO_LOCATION
 
 
@@ -18,15 +18,55 @@ _crowd_state = {
     'phase_duration': 0
 }
 
+# Metro Stations Configuration (Based on Namma Metro lines)
+METRO_STATIONS = {
+    "mg_road": {
+        "id": "mg_road",
+        "name": "MG Road Metro",
+        "location": [12.9756, 77.6057],
+        "line": "Blue Line",
+        "color": "#28458C",
+        "capacity": 15000,
+        "icon": "🚇"
+    },
+    "majestic": {
+        "id": "majestic",
+        "name": "Majestic Metro",
+        "location": [12.9767, 77.5713],
+        "line": "Green Line",
+        "color": "#009933",
+        "capacity": 20000,
+        "icon": "🚇"
+    },
+    "indiranagar": {
+        "id": "indiranagar",
+        "name": "Indiranagar Metro",
+        "location": [12.9784, 77.6408],
+        "line": "Purple Line",
+        "color": "#8C2877",
+        "capacity": 12000,
+        "icon": "🚇"
+    },
+    "electronic_city": {
+        "id": "electronic_city",
+        "name": "Electronic City Metro",
+        "location": [12.8450, 77.6628],
+        "line": "Yellow Line",
+        "color": "#FFDF00",
+        "capacity": 18000,
+        "icon": "🚇"
+    }
+}
+
 
 def get_crowd_state() -> Dict:
     """Get current crowd state"""
     return _crowd_state
 
 
-def simulate_metro_flow() -> Dict:
+def simulate_station_flow(station_id: str, station_config: Dict) -> Dict:
     """
-    Simulate metro passenger flow for MG Road station
+    Simulate metro passenger flow for a specific station
     Flow SYNCHRONIZED with crowd density phase for realistic correlation
     """
     global _crowd_state
@@ -34,6 +74,7 @@ def simulate_metro_flow() -> Dict:
     current_hour = datetime.now().hour
     current_phase = _crowd_state.get('phase', 'low')
     base_intensity = _crowd_state.get('base_intensity', 20)
+    capacity = station_config.get('capacity', 15000)
     
     # Metro flow correlates with crowd phase
     if current_phase == 'building':
@@ -84,26 +125,85 @@ def simulate_metro_flow() -> Dict:
             status = "moderate"
             flow_reason = "Normal"
     
+    # Add station-specific variation based on capacity
+    capacity_factor = capacity / 15000  # Normalize to base capacity
+    base_entry = int(base_entry * capacity_factor)
+    base_exit = int(base_exit * capacity_factor)
+    
     # Add natural variation
     entry_rate = max(10, base_entry + random.randint(-5, 5))
     exit_rate = max(10, base_exit + random.randint(-5, 5))
     
     # Calculate capacity percentage
     total_flow = entry_rate + exit_rate
-    capacity_percent = min(int((total_flow / 200) * 100), 100)
+    max_flow = capacity // 100  # Assume ~1% of capacity per minute is max
+    capacity_percent = min(int((total_flow / max_flow) * 100), 100)
     
     return {
-        "type": "metro_update",
-        "station": "MG Road Metro",
-        "location": METRO_LOCATION,
+        "id": station_id,
+        "station": station_config['name'],
+        "location": station_config['location'],
+        "line": station_config['line'],
+        "color": station_config['color'],
         "entry_rate": entry_rate,
         "exit_rate": exit_rate,
         "total_flow": total_flow,
+        "capacity": capacity,
         "capacity_percent": capacity_percent,
         "status": status,
         "flow_reason": flow_reason,
         "crowd_phase": current_phase,
         "timestamp": datetime.now().isoformat()
+    }
+
+
+def simulate_all_metro_stations() -> Dict:
+    """
+    Simulate all metro stations and return aggregated data
+    """
+    stations = []
+    total_entry = 0
+    total_exit = 0
+    
+    for station_id, station_config in METRO_STATIONS.items():
+        station_data = simulate_station_flow(station_id, station_config)
+        stations.append(station_data)
+        total_entry += station_data['entry_rate']
+        total_exit += station_data['exit_rate']
+    
+    return {
+        "type": "multi_metro_update",
+        "stations": stations,
+        "summary": {
+            "total_stations": len(stations),
+            "total_entry_rate": total_entry,
+            "total_exit_rate": total_exit,
+            "total_flow": total_entry + total_exit,
+            "crowd_phase": _crowd_state.get('phase', 'low')
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+def simulate_metro_flow() -> Dict:
+    """
+    LEGACY: Simulate metro passenger flow for MG Road station only
+    For backward compatibility
+    """
+    mg_road_data = simulate_station_flow("mg_road", METRO_STATIONS["mg_road"])
+    
+    return {
+        "type": "metro_update",
+        "station": mg_road_data['station'],
+        "location": mg_road_data['location'],
+        "entry_rate": mg_road_data['entry_rate'],
+        "exit_rate": mg_road_data['exit_rate'],
+        "total_flow": mg_road_data['total_flow'],
+        "capacity_percent": mg_road_data['capacity_percent'],
+        "status": mg_road_data['status'],
+        "flow_reason": mg_road_data['flow_reason'],
+        "crowd_phase": mg_road_data['crowd_phase'],
+        "timestamp": mg_road_data['timestamp']
     }
 
 

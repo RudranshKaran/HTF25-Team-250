@@ -302,3 +302,121 @@
   }
 }
 
+/* Multi-Metro Widgets */
+.metro-stations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.mini-metro-widget {
+  background: linear-gradient(135deg, rgba(40, 69, 140, 0.1), rgba(40, 69, 140, 0.05));
+  border: 1px solid rgba(40, 69, 140, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.2s ease;
+}
+
+.mini-metro-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 69, 140, 0.2);
+  border-color: rgba(40, 69, 140, 0.5);
+}
+
+.mini-metro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metro-station-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.metro-line-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.mini-metro-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.mini-stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.mini-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4CAF50;
+}
+
+.mini-metro-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mini-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.mini-status.low {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
+.mini-status.moderate {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
+
+.mini-status.high {
+  background-color: rgba(255, 87, 34, 0.2);
+  color: #FF5722;
+}
+
+.mini-capacity {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive - collapse to 1 column on smaller screens */
+@media (max-width: 1400px) {
+  .metro-stations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

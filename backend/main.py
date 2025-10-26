@@ -6,8 +6,8 @@ FastAPI backend with WebSocket support for real-time data streaming
 import asyncio
 import json
 from datetime import datetime
-from typing import Set
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import Set, Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from app.services import (
     fetch_bmtc_bus_data, fetch_weather_data, 
     format_bus_summary, format_weather_summary,
-    simulate_metro_flow, simulate_crowd_density, 
+    simulate_metro_flow, simulate_all_metro_stations, simulate_crowd_density, 
     check_alerts, format_metro_summary, format_density_summary,
     history_manager, ai_service
 )
@@ -186,11 +186,12 @@ async def metro_simulation_task():
     global latest_metro_data
     await asyncio.sleep(7)  # Initial delay
     
-    print("Metro simulation task started")
+    print("Metro simulation task started - ALL STATIONS")
     
     while True:
         if manager.active_connections and not config_manager.simulations_paused:
             try:
+                # Get single-station data for backward compatibility
                 metro_data = simulate_metro_flow()
                 latest_metro_data = metro_data
                 config_manager.increment_message_count()
@@ -201,10 +202,20 @@ async def metro_simulation_task():
                 # Add trend to data
                 metro_data['trend'] = history_manager.get_metro_trend()
                 
+                # Broadcast single-station data (legacy)
                 await manager.broadcast(metro_data)
-                print(f"🚇 Metro broadcast: {format_metro_summary(metro_data)}")
+                print(f"🚇 Metro (MG Road): {format_metro_summary(metro_data)}")
                 
-                # Check alerts
+                # Get multi-station data
+                multi_metro_data = simulate_all_metro_stations()
+                config_manager.increment_message_count()
+                
+                # Broadcast multi-station data
+                await manager.broadcast(multi_metro_data)
+                summary = multi_metro_data['summary']
+                print(f"🚇 Multi-Metro: {summary['total_stations']} stations, Total Flow: {summary['total_flow']}/min, Phase: {summary['crowd_phase']}")
+                
+                # Check alerts (using MG Road data for now)
                 if latest_density_data:
                     alerts = check_alerts(latest_density_data, metro_data)
                     for alert in alerts:
@@ -426,30 +437,49 @@ async def toggle_demo_mode():
 # ===== AI INFERENCE ENDPOINTS =====
 
 @app.post("/api/ai/insights")
-async def get_crowd_insights(data: dict = None):
+async def get_crowd_insights(data: Optional[dict] = Body(None)):
     """Generate AI insights for crowd management"""
     try:
         crowd_data = data or latest_density_data or {}
-        # Run blocking AI call in thread pool to avoid blocking event loop
-        insights = await asyncio.to_thread(ai_service.generate_crowd_insights, crowd_data)
+        # Run blocking AI call in thread pool with timeout
+        try:
+            insights = await asyncio.wait_for(
+                asyncio.to_thread(ai_service.generate_crowd_insights, crowd_data),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            print(f"⏱️ Insights generation timed out (30s)")
+            return {"status": "error", "message": "Insights generation timed out"}, 504
         return {"status": "success", "insights": insights}
     except Exception as e:
         print(f"❌ AI Insights Error: {e}")
         return {"status": "error", "message": str(e)}, 500
 
 @app.post("/api/ai/action-plan")
-async def get_action_plan(zone: str = "all", data: dict = None):
+async def get_action_plan(zone: str = Query("all"), data: Optional[dict] = Body(None)):
     """Generate action plan to ease crowd"""
     try:
         crowd_data = data or latest_density_data or {}
         summary = crowd_data.get('summary', {})
         alert_zones = summary.get('critical_zones', []) + summary.get('warning_zones', [])
         
-        # Run blocking AI call in thread pool to avoid blocking event loop
-        action_plan = await asyncio.to_thread(ai_service.generate_action_plan, crowd_data, alert_zones or [zone])
+        print(f"🤖 Generating action plan for zones: {alert_zones or [zone]}")
+        # Run blocking AI call in thread pool with timeout to avoid hanging
+        try:
+            action_plan = await asyncio.wait_for(
+                asyncio.to_thread(ai_service.generate_action_plan, crowd_data, alert_zones or [zone]),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            print(f"⏱️ Action plan generation timed out (30s)")
+            return {"status": "error", "message": "Action plan generation timed out"}, 504
+        
+        print(f"✅ Action plan generated successfully")
         return {"status": "success", "action_plan": action_plan}
     except Exception as e:
         print(f"❌ Action Plan Error: {e}")
+        import traceback
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}, 500
 
 @app.get("/api/ai/nearest-transportation")
@@ -465,12 +495,19 @@ async def get_nearest_transportation(zone: str = "all"):
         return {"status": "error", "message": str(e)}, 500
 
 @app.post("/api/ai/traffic-diversion")
-async def suggest_traffic_diversion(zone: str = "all", data: dict = None):
+async def suggest_traffic_diversion(zone: str = Query("all"), data: Optional[dict] = Body(None)):
     """Get traffic diversion recommendations"""
     try:
         crowd_data = data or latest_density_data or {}
-        # Run blocking AI call in thread pool to avoid blocking event loop
-        diversion = await asyncio.to_thread(ai_service.suggest_traffic_diversion, zone, crowd_data)
+        # Run blocking AI call in thread pool with timeout
+        try:
+            diversion = await asyncio.wait_for(
+                asyncio.to_thread(ai_service.suggest_traffic_diversion, zone, crowd_data),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            print(f"⏱️ Traffic diversion generation timed out (30s)")
+            return {"status": "error", "message": "Traffic diversion generation timed out"}, 504
         return {"status": "success", "diversion": diversion}
     except Exception as e:
         print(f"❌ Diversion Error: {e}")
@@ -482,15 +519,22 @@ async def generate_crowd_report(period: str = "1hour"):
     try:
         crowd_data = latest_density_data or {}
         alerts = history_manager.get_history_summary().get('alerts', [])
-        # Run blocking AI call in thread pool to avoid blocking event loop
-        report = await asyncio.to_thread(ai_service.generate_report, crowd_data, alerts, period)
+        # Run blocking AI call in thread pool with timeout
+        try:
+            report = await asyncio.wait_for(
+                asyncio.to_thread(ai_service.generate_report, crowd_data, alerts, period),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            print(f"⏱️ Report generation timed out (30s)")
+            return {"status": "error", "message": "Report generation timed out"}, 504
         return {"status": "success", "report": report}
     except Exception as e:
         print(f"❌ Report Error: {e}")
         return {"status": "error", "message": str(e)}, 500
 
 @app.post("/api/ai/zone-specific-plan")
-async def get_zone_specific_plan(data: dict = None):
+async def get_zone_specific_plan(data: Optional[dict] = Body(None)):
     """
     Generate detailed zone-specific plans with analysis, risk assessment, and reasoning
     Returns comprehensive action plans for each zone including:
@@ -505,11 +549,23 @@ async def get_zone_specific_plan(data: dict = None):
         if not crowd_data:
             return {"status": "warning", "message": "No crowd data available", "plan": {}}
         
-        # Run blocking AI call in thread pool to avoid blocking event loop
-        zone_plan = await asyncio.to_thread(ai_service.generate_zone_specific_plan, crowd_data)
+        print(f"🤖 Generating zone-specific plans...")
+        # Run blocking AI call in thread pool with timeout (longer for multiple zones)
+        try:
+            zone_plan = await asyncio.wait_for(
+                asyncio.to_thread(ai_service.generate_zone_specific_plan, crowd_data),
+                timeout=60.0
+            )
+        except asyncio.TimeoutError:
+            print(f"⏱️ Zone-specific plan generation timed out (60s)")
+            return {"status": "error", "message": "Zone-specific plan generation timed out"}, 504
+        
+        print(f"✅ Zone-specific plans generated successfully")
         return {"status": "success", "zone_specific_plan": zone_plan}
     except Exception as e:
         print(f"❌ Zone-Specific Plan Error: {e}")
+        import traceback
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}, 500
 
 @app.websocket("/ws")

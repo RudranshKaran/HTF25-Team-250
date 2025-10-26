@@ -18,7 +18,13 @@ def initialize_zone_states():
     """Initialize crowd states for all zones"""
     global _zone_states
     
-    if not _zone_states:
+    # Initialize only if empty OR if not all zones are present (partial initialization)
+    if not _zone_states or len(_zone_states) < len(ZONES):
+        if _zone_states:
+            print(f"⚠️ Partial initialization detected ({len(_zone_states)}/{len(ZONES)} zones). Re-initializing all zones...")
+            _zone_states.clear()
+        
+        print(f"🔧 Initializing zone states for {len(ZONES)} zones...")
         for zone_id, zone_config in ZONES.items():
             # Different zones start at different phases for variety
             phases = ['low', 'building', 'peak', 'dispersing']
@@ -26,7 +32,7 @@ def initialize_zone_states():
             
             # Base intensity correlates with zone capacity
             capacity_factor = zone_config["capacity"] / 50000  # Normalize
-            max_intensity = max(10, int(30 * capacity_factor))  # Ensure min value is at least 10
+            max_intensity = max(10, int(30 * capacity_factor))  # Ensure min upper bound is safe
             base_intensity = random.randint(10, max_intensity)
             
             _zone_states[zone_id] = {
@@ -40,6 +46,7 @@ def initialize_zone_states():
                 'capacity': zone_config["capacity"],
                 'type': zone_config["type"]
             }
+        print(f"✅ Initialized {len(_zone_states)} zone states: {list(_zone_states.keys())}")
 
 
 def update_zone_phase(zone_state: Dict):
@@ -111,13 +118,14 @@ def update_zone_phase(zone_state: Dict):
         if zone_state['phase_duration'] > low_duration:
             zone_state['phase'] = 'building'
             zone_state['phase_duration'] = 0
-            # Create new hotspots
+            # Create new hotspots with RANDOM positions (not grid-aligned)
             num_hotspots = random.randint(2, 4)
             grid_size = 10
             zone_state['hotspot_centers'] = [
                 {
-                    'i': random.randint(2, grid_size - 3),
-                    'j': random.randint(2, grid_size - 3),
+                    # Use floating-point for natural random distribution
+                    'i': random.uniform(2.0, grid_size - 3.0),
+                    'j': random.uniform(2.0, grid_size - 3.0),
                 }
                 for _ in range(num_hotspots)
             ]
@@ -135,8 +143,9 @@ def generate_zone_density_grid(zone_state: Dict) -> tuple:
         num_hotspots = random.randint(2, 3)
         zone_state['hotspot_centers'] = [
             {
-                'i': random.randint(2, grid_size - 3),
-                'j': random.randint(2, grid_size - 3),
+                # Use floating-point for natural random distribution
+                'i': random.uniform(2.0, grid_size - 3.0),
+                'j': random.uniform(2.0, grid_size - 3.0),
             }
             for _ in range(num_hotspots)
         ]
@@ -148,20 +157,17 @@ def generate_zone_density_grid(zone_state: Dict) -> tuple:
         for j in range(grid_size):
             density = random.randint(0, 5)
             
-            # Add hotspot influence
+            # Add hotspot influence with smoother falloff
             for hotspot in zone_state['hotspot_centers']:
                 distance = math.sqrt((i - hotspot['i'])**2 + (j - hotspot['j'])**2)
                 
-                if distance < 0.5:
+                # Smoother inverse square falloff for more natural hotspots
+                if distance < 0.1:
                     contribution = base_intensity
-                elif distance < 1.5:
-                    contribution = base_intensity * 0.7
-                elif distance < 3.0:
-                    contribution = base_intensity * 0.4
-                elif distance < 5.0:
-                    contribution = base_intensity * 0.15
                 else:
-                    contribution = 0
+                    # Inverse square law with randomness
+                    falloff = 1 / (1 + distance**2) 
+                    contribution = base_intensity * falloff * random.uniform(0.8, 1.2)
                 
                 density += contribution
             
@@ -171,10 +177,11 @@ def generate_zone_density_grid(zone_state: Dict) -> tuple:
             
             row.append(density)
             
-            # Track hotspots
+            # Track hotspots with added jitter for natural positioning
             if density > base_intensity * 0.7:
-                lat_offset = (i - grid_size/2) * 0.002
-                lon_offset = (j - grid_size/2) * 0.002
+                # Add small random offset to prevent grid alignment
+                lat_offset = (i - grid_size/2 + random.uniform(-0.3, 0.3)) * 0.002
+                lon_offset = (j - grid_size/2 + random.uniform(-0.3, 0.3)) * 0.002
                 hotspots.append({
                     "lat": ZONES[zone_state['zone_id']]["center"][0] + lat_offset,
                     "lon": ZONES[zone_state['zone_id']]["center"][1] + lon_offset,
@@ -183,7 +190,11 @@ def generate_zone_density_grid(zone_state: Dict) -> tuple:
         
         grid.append(row)
     
-    return grid, hotspots
+    # Limit to top 3 hotspots per zone (sorted by intensity)
+    hotspots.sort(key=lambda h: h['intensity'], reverse=True)
+    top_hotspots = hotspots[:3]  # Keep only top 3
+    
+    return grid, top_hotspots
 
 
 async def simulate_all_zones_density() -> Dict:
@@ -240,7 +251,7 @@ async def simulate_all_zones_density() -> Dict:
         
         all_hotspots.extend(hotspots)
     
-    return {
+    result = {
         "type": "multi_zone_density_update",
         "timestamp": datetime.now().isoformat(),
         "zones": zones_data,
@@ -250,9 +261,14 @@ async def simulate_all_zones_density() -> Dict:
             "max_density_overall": max_density_overall,
             "critical_zones": critical_zones,
             "warning_zones": warning_zones,
-            "all_hotspots": all_hotspots[:50]  # Limit for performance
+            "all_hotspots": all_hotspots[:21]  # Max 3 per zone × 7 zones = 21
         }
     }
+    
+    total_hotspots = sum(len(z.get('hotspots', [])) for z in zones_data.values())
+    print(f"📊 Generated multi-zone data: {len(zones_data)} zones with {total_hotspots} total hotspots (max 3/zone)")
+    
+    return result
 
 
 def check_multi_zone_alerts(zone_density_data: Dict, metro_data: Dict) -> List[Dict]:
