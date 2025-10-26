@@ -18,18 +18,30 @@ function AlertBanner({ alerts, onDismiss }) {
       if (criticalAlerts.length > 0) {
         // Get the most recent one
         const mostRecent = criticalAlerts[0];
-        setCurrentAlert({
+        const newAlert = {
           ...mostRecent,
           id: mostRecent.id || `${Date.now()}`,
           timestamp: mostRecent.timestamp || new Date().toISOString()
-        });
+        };
+        
+        // Only update if it's a different alert
+        if (!currentAlert || currentAlert.id !== newAlert.id) {
+          setCurrentAlert(newAlert);
+          
+          // Auto-dismiss after 15 seconds
+          const timer = setTimeout(() => {
+            setCurrentAlert(null);
+          }, 15000);
+          
+          return () => clearTimeout(timer);
+        }
       } else {
         setCurrentAlert(null);
       }
     } else {
       setCurrentAlert(null);
     }
-  }, [alerts]);
+  }, [alerts, currentAlert]);
 
   const handleDismiss = () => {
     if (currentAlert && onDismiss) {

@@ -112,25 +112,32 @@ function App() {
             // Enhanced alert routing with deduplication
             console.log(`⚠️ ${data.level.toUpperCase()} ALERT: ${data.message}`);
             
+            // Check if this is a duplicate alert (same category, zone, level)
+            const alertKey = `${data.category}-${data.zone}-${data.level}`;
+            const now = Date.now();
+            const lastAlertTime = alertDedupeMap.current.get(alertKey);
+            const isDuplicate = lastAlertTime && (now - lastAlertTime.timestamp) < 30000; // 30 seconds
+            
             // Add to notification hub (with deduplication)
             addNotification(data);
             
-            // Route based on severity
-            if (data.level === 'critical') {
-              // CRITICAL: Full alert experience
+            // Route based on severity (only if NOT a duplicate)
+            if (data.level === 'critical' && !isDuplicate) {
+              // CRITICAL: Full alert experience (only for NEW critical alerts)
               setAlerts(prev => [data, ...prev].slice(0, 1)); // Keep only most recent critical for banner
               audioManager.playCriticalAlert(); // 3 urgent beeps
               notify.error(`🚨 ${data.message}`, 8000); // Toast popup
               
-            } else if (data.level === 'warning') {
-              // WARNING: Silent to hub, gentle audio feedback only
+            } else if (data.level === 'warning' && !isDuplicate) {
+              // WARNING: Silent to hub, gentle audio feedback only (only for NEW warnings)
               audioManager.playNotification(); // Gentle single beep
               // NO toast popup, NO banner - warnings go to hub only
               
-            } else {
+            } else if (!isDuplicate) {
               // INFO: Completely silent, hub only
               // No audio, no toast, no banner
             }
+            // If duplicate, it only updates the notification hub (no sound, no banner, no toast)
             break;
           case 'first_responders_update':
             // Update first responders data
