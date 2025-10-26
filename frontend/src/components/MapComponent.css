@@ -158,6 +158,92 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
+/* Hotspot Marker Styles */
+.custom-hotspot-icon {
+  background: none;
+  border: none;
+}
+
+.hotspot-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 69, 58, 0.7), rgba(255, 69, 58, 0) 70%);
+}
+
+.hotspot-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 69, 58, 0.4);
+  animation: hotspotPulse 2s ease-out infinite;
+}
+
+@keyframes hotspotPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.hotspot-icon {
+  font-size: 24px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  animation: hotspotBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes hotspotBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Hotspot Popup Styles */
+.hotspot-popup {
+  min-width: 200px;
+}
+
+.hotspot-popup h3 {
+  color: #ff453a;
+  margin-bottom: 10px;
+}
+
+.hotspot-popup .intensity-critical {
+  color: #ff453a;
+  font-weight: bold;
+}
+
+.hotspot-popup .intensity-high {
+  color: #ff9500;
+  font-weight: bold;
+}
+
+.hotspot-popup .intensity-moderate {
+  color: #ffd60a;
+  font-weight: bold;
+}
+
+.hotspot-warning {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 69, 58, 0.1);
+  border-left: 3px solid #ff453a;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
 @keyframes busFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }

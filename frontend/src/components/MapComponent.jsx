@@ -36,6 +36,23 @@ const createResponderIcon = (icon, color) => {
   });
 };
 
+// Custom hotspot icon (crowd density hotspot)
+const createHotspotIcon = (intensity) => {
+  // Intensity ranges from 0 to 1, scale to size and opacity
+  const size = 20 + (intensity * 30); // 20px to 50px
+  const opacity = 0.6 + (intensity * 0.4); // 0.6 to 1.0
+  
+  return new L.DivIcon({
+    html: `<div class="hotspot-marker" style="width: ${size}px; height: ${size}px; opacity: ${opacity};">
+             <div class="hotspot-pulse"></div>
+             <div class="hotspot-icon">📍</div>
+           </div>`,
+    className: 'custom-hotspot-icon',
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+  });
+};
+
 const responderIcons = {
   police: createResponderIcon('🚓', '#0066cc'),
   ambulance: createResponderIcon('🚑', '#ff3333'),
@@ -384,6 +401,39 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
             </Popup>
           </Marker>
         ))}
+
+        {/* Crowd Density Hotspot Markers */}
+        {hotspots.map((hotspot, index) => {
+          // Normalize intensity to 0-1 range
+          const normalizedIntensity = Math.min(hotspot.intensity / 250, 1);
+          
+          return (
+            <Marker
+              key={`hotspot-${index}`}
+              position={[hotspot.lat, hotspot.lon]}
+              icon={createHotspotIcon(normalizedIntensity)}
+              zIndexOffset={500}
+            >
+              <Popup>
+                <div className="custom-popup hotspot-popup">
+                  <h3>🔥 Crowd Hotspot</h3>
+                  <p><strong>Density Level:</strong> {Math.round(hotspot.intensity)} people</p>
+                  <p><strong>Intensity:</strong> 
+                    <span className={`intensity-${normalizedIntensity > 0.7 ? 'critical' : normalizedIntensity > 0.4 ? 'high' : 'moderate'}`}>
+                      {normalizedIntensity > 0.7 ? ' CRITICAL' : normalizedIntensity > 0.4 ? ' HIGH' : ' MODERATE'}
+                    </span>
+                  </p>
+                  <p><strong>Location:</strong> {hotspot.lat.toFixed(4)}, {hotspot.lon.toFixed(4)}</p>
+                  <p className="hotspot-warning">
+                    {normalizedIntensity > 0.7 ? '⚠️ Immediate attention required' : 
+                     normalizedIntensity > 0.4 ? '⚠️ Monitor closely' : 
+                     'ℹ️ Normal crowd levels'}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       {/* Map Legend */}
