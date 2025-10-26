@@ -256,7 +256,7 @@
 /* Crowd Phase Status Badge */
 .phase-badge {
   position: absolute;
-  top: 20px;
+  bottom: 40px;
   left: 20px;
   display: flex;
   align-items: center;
