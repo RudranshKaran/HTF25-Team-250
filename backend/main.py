@@ -20,6 +20,9 @@ from app.services import (
     check_alerts, format_metro_summary, format_density_summary,
     history_manager
 )
+from app.services.first_responders_service import (
+    get_first_responders_data, format_responders_summary
+)
 from app.config import config_manager
 
 # Load environment variables
@@ -234,6 +237,28 @@ async def density_simulation_task():
         
         await asyncio.sleep(30)  # Update every 30 seconds
 
+
+# Background task for first responders
+async def first_responders_task():
+    """Update and broadcast first responders positions every 15 seconds"""
+    await asyncio.sleep(3)  # Initial delay
+    
+    print("First responders tracking task started")
+    
+    while True:
+        if manager.active_connections:
+            try:
+                responders_data = await get_first_responders_data()
+                config_manager.increment_message_count()
+                
+                await manager.broadcast(responders_data)
+                print(f"🚨 First Responders: {format_responders_summary(responders_data)}")
+                        
+            except Exception as e:
+                print(f"❌ First responders task error: {e}")
+        
+        await asyncio.sleep(15)  # Update every 15 seconds (more frequent for emergency vehicles)
+
 # Routes
 @app.get("/")
 async def root():
@@ -397,6 +422,7 @@ async def startup_event():
     asyncio.create_task(weather_data_task())
     asyncio.create_task(metro_simulation_task())
     asyncio.create_task(density_simulation_task())
+    asyncio.create_task(first_responders_task())
     
     print("✅ Background tasks started:")
     print("   - Test messages (every 10s)")
@@ -404,6 +430,7 @@ async def startup_event():
     print("   - Weather data (every 5min)")
     print("   - Metro flow simulation (every 60s)")
     print("   - Crowd density simulation (every 30s)")
+    print("   - First Responders tracking (every 15s)")
     print("=" * 60)
 
 if __name__ == "__main__":

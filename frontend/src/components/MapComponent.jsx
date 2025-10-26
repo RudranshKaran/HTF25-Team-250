@@ -26,6 +26,23 @@ const busIcon = new L.DivIcon({
   iconAnchor: [15, 15],
 });
 
+// Custom first responder icons
+const createResponderIcon = (icon, color) => {
+  return new L.DivIcon({
+    html: `<div class="responder-marker">${icon}</div>`,
+    className: 'custom-responder-icon',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+};
+
+const responderIcons = {
+  police: createResponderIcon('🚓', '#0066cc'),
+  ambulance: createResponderIcon('🚑', '#ff3333'),
+  fire: createResponderIcon('🚒', '#ff6600'),
+  emergency: createResponderIcon('🚨', '#ff00ff')
+};
+
 // Bengaluru coordinates (M. Chinnaswamy Stadium area)
 const BENGALURU_CENTER = [12.9791, 77.5993];
 const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
@@ -114,9 +131,10 @@ function HeatmapLayer({ densityData }) {
   return null;
 }
 
-function MapComponent({ busData, densityData }) {
+function MapComponent({ busData, densityData, firstResponders }) {
   const [buses, setBuses] = useState([]);
   const [hotspots, setHotspots] = useState([]);
+  const [responders, setResponders] = useState([]);
 
   // Update buses when new data arrives
   useEffect(() => {
@@ -138,6 +156,13 @@ function MapComponent({ busData, densityData }) {
       setHotspots(densityData.hotspots);
     }
   }, [densityData]);
+
+  // Update first responders when new data arrives
+  useEffect(() => {
+    if (firstResponders && firstResponders.responders) {
+      setResponders(firstResponders.responders);
+    }
+  }, [firstResponders]);
 
   return (
     <div className="map-wrapper">
@@ -265,6 +290,31 @@ function MapComponent({ busData, densityData }) {
             </Popup>
           </Marker>
         ))}
+
+        {/* First Responders Markers */}
+        {responders.map((responder, index) => (
+          <Marker
+            key={`responder-${responder.id}-${index}`}
+            position={[responder.lat, responder.lon]}
+            icon={responderIcons[responder.type]}
+            zIndexOffset={1000}
+          >
+            <Popup>
+              <div className="custom-popup">
+                <h3>{responder.icon} {responder.name}</h3>
+                <p><strong>Unit ID:</strong> {responder.id}</p>
+                <p><strong>Vehicle:</strong> {responder.vehicle_id}</p>
+                <p><strong>Status:</strong> <span className={`status-${responder.status}`}>{responder.status.toUpperCase()}</span></p>
+                <p><strong>Speed:</strong> {responder.speed} km/h</p>
+                <p><strong>Zone:</strong> {responder.zone}</p>
+                <p><strong>Location:</strong> {responder.lat.toFixed(4)}, {responder.lon.toFixed(4)}</p>
+                <p className="responder-update-time">
+                  Updated: {new Date(responder.timestamp).toLocaleTimeString()}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       {/* Map Legend */}
@@ -285,6 +335,22 @@ function MapComponent({ busData, densityData }) {
         <div className="legend-item">
           <span className="legend-icon">🚌</span>
           <span>BMTC Buses ({buses.length})</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🚓</span>
+          <span>Police ({responders.filter(r => r.type === 'police').length})</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🚑</span>
+          <span>Ambulance ({responders.filter(r => r.type === 'ambulance').length})</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🚒</span>
+          <span>Fire Trucks ({responders.filter(r => r.type === 'fire').length})</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon">🚨</span>
+          <span>Emergency ({responders.filter(r => r.type === 'emergency').length})</span>
         </div>
         <div className="legend-item">
           <span className="legend-color heatmap-gradient"></span>

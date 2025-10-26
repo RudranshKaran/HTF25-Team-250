@@ -35,6 +35,7 @@ function App() {
   const [metroData, setMetroData] = useState(null);
   const [densityData, setDensityData] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [firstResponders, setFirstResponders] = useState(null);
   
   // Phase 5: Performance & Settings
   const [messageCount, setMessageCount] = useState(0);
@@ -111,6 +112,11 @@ function App() {
               audioManager.playWarningAlert();
               notify.warning(`⚠️ ${data.message}`, 6000);
             }
+            break;
+          case 'first_responders_update':
+            // Update first responders data
+            console.log(`🚨 First Responders: ${data.count} units active`);
+            setFirstResponders(data);
             break;
           default:
             console.log('Unknown message type:', data.type);
@@ -367,7 +373,7 @@ function App() {
       <div className="main-content">
         {/* Map component */}
         <div className="map-container">
-          <MapComponent busData={busData} densityData={densityData} />
+          <MapComponent busData={busData} densityData={densityData} firstResponders={firstResponders} />
         </div>
 
         {/* Side panel */}

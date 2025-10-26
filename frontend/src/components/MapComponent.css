@@ -145,6 +145,19 @@
   animation: busFloat 2s ease-in-out infinite;
 }
 
+/* First Responder Markers */
+.custom-responder-icon {
+  background: none;
+  border: none;
+}
+
+.responder-marker {
+  font-size: 26px;
+  text-align: center;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 @keyframes busFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
