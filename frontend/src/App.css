@@ -84,7 +84,7 @@
 /* Section Content Area */
 .section-content {
   flex: 1;
-  overflow: visible;
+  overflow: auto;
   min-height: 0;
   height: 100%;
   position: relative;
