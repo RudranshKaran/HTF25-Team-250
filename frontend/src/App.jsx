@@ -4,13 +4,15 @@
  * Enhanced Version 2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import MapComponent from './components/MapComponent';
 import WeatherWidget from './components/WeatherWidget';
 import MetroFlowWidget from './components/MetroFlowWidget';
 import AlertBanner from './components/AlertBanner';
 import AlertHistory from './components/AlertHistory';
 import NotificationCenter, { notify } from './components/NotificationCenter';
+import NotificationHub from './components/NotificationHub';
+import NotificationBell from './components/NotificationBell';
 import ControlPanel from './components/ControlPanel';
 import QuickActions from './components/QuickActions';
 import ModeToggle from './components/ModeToggle';
@@ -40,6 +42,13 @@ function App() {
   // Phase 5: Performance & Settings
   const [messageCount, setMessageCount] = useState(0);
   const [settings, setSettings] = useState(null);
+  
+  // Enhanced Notification System
+  const [notificationHubOpen, setNotificationHubOpen] = useState(false);
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [hasNewCritical, setHasNewCritical] = useState(false);
+  const alertDedupeMap = useRef(new Map()); // Track recent alerts for deduplication
 
   // WebSocket connection logic
   const connectWebSocket = useCallback(() => {
@@ -100,17 +109,27 @@ function App() {
             setDensityData(data);
             break;
           case 'alert':
-            // New alert received
+            // Enhanced alert routing with deduplication
             console.log(`⚠️ ${data.level.toUpperCase()} ALERT: ${data.message}`);
-            setAlerts(prev => [data, ...prev].slice(0, 5)); // Keep last 5 alerts
             
-            // Play alert sound based on level
+            // Add to notification hub (with deduplication)
+            addNotification(data);
+            
+            // Route based on severity
             if (data.level === 'critical') {
-              audioManager.playCriticalAlert();
-              notify.error(`🚨 ${data.message}`, 8000);
+              // CRITICAL: Full alert experience
+              setAlerts(prev => [data, ...prev].slice(0, 1)); // Keep only most recent critical for banner
+              audioManager.playCriticalAlert(); // 3 urgent beeps
+              notify.error(`🚨 ${data.message}`, 8000); // Toast popup
+              
             } else if (data.level === 'warning') {
-              audioManager.playWarningAlert();
-              notify.warning(`⚠️ ${data.message}`, 6000);
+              // WARNING: Silent to hub, gentle audio feedback only
+              audioManager.playNotification(); // Gentle single beep
+              // NO toast popup, NO banner - warnings go to hub only
+              
+            } else {
+              // INFO: Completely silent, hub only
+              // No audio, no toast, no banner
             }
             break;
           case 'first_responders_update':
@@ -171,6 +190,92 @@ function App() {
     
     return cleanup;
   }, [connectWebSocket]);
+
+  // ===== NOTIFICATION SYSTEM FUNCTIONS =====
+  
+  // Add notification to hub with deduplication
+  const addNotification = useCallback((alert) => {
+    const alertKey = `${alert.category}-${alert.zone}-${alert.level}`;
+    const now = Date.now();
+    
+    // Check for duplicate within last 30 seconds
+    const existing = alertDedupeMap.current.get(alertKey);
+    if (existing && (now - existing.timestamp) < 30000) {
+      // Update existing notification instead of creating new one
+      setAllNotifications(prev => 
+        prev.map(notif => 
+          notif.dedupeKey === alertKey && !notif.read
+            ? { ...notif, ...alert, value: alert.value, timestamp: alert.timestamp, updatedCount: (notif.updatedCount || 0) + 1 }
+            : notif
+        )
+      );
+      return;
+    }
+    
+    // Add new notification
+    const notification = {
+      ...alert,
+      id: alert.id || `alert-${now}-${Math.random()}`,
+      read: false,
+      dedupeKey: alertKey,
+      updatedCount: 0
+    };
+    
+    alertDedupeMap.current.set(alertKey, { id: notification.id, timestamp: now });
+    
+    setAllNotifications(prev => [notification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    
+    // Set critical flag if critical alert
+    if (alert.level === 'critical') {
+      setHasNewCritical(true);
+      setTimeout(() => setHasNewCritical(false), 3000);
+    }
+    
+    // Cleanup old dedupe entries (older than 1 minute)
+    alertDedupeMap.current.forEach((value, key) => {
+      if (now - value.timestamp > 60000) {
+        alertDedupeMap.current.delete(key);
+      }
+    });
+  }, []);
+
+  // Mark notifications as read
+  const markAsRead = useCallback((notificationIds) => {
+    setAllNotifications(prev => 
+      prev.map(notif => 
+        notificationIds.includes(notif.id) ? { ...notif, read: true } : notif
+      )
+    );
+    setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
+  }, []);
+
+  // Dismiss notification
+  const dismissNotification = useCallback((notificationId) => {
+    setAllNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    setUnreadCount(prev => {
+      const notification = allNotifications.find(n => n.id === notificationId);
+      return notification && !notification.read ? Math.max(0, prev - 1) : prev;
+    });
+  }, [allNotifications]);
+
+  // View alert on map
+  const viewAlertOnMap = useCallback((alert) => {
+    if (alert.location && alert.location.length === 2) {
+      // This would trigger map zoom - you can implement this in MapComponent
+      console.log('Zoom to location:', alert.location);
+      notify.info(`📍 Viewing ${alert.zone} on map`);
+      setNotificationHubOpen(false);
+      
+      // Optionally: Add a ref to MapComponent and call a zoom function
+      // mapRef.current?.zoomTo(alert.location);
+    }
+  }, []);
+
+  // Toggle notification hub
+  const toggleNotificationHub = useCallback(() => {
+    setNotificationHubOpen(prev => !prev);
+  }, []);
 
   // Fetch settings
   const fetchSettings = useCallback(async () => {
@@ -251,10 +356,66 @@ function App() {
       notify.info('Keyboard shortcuts logged to console', 5000);
     }, 'Show Shortcuts');
     
+    // TEST: Generate sample notifications (Press 't' key)
+    keyboardManager.register('t', '', () => {
+      // Generate test notifications of all types
+      const testAlerts = [
+        {
+          level: 'warning',
+          category: 'crowd_density',
+          zone: 'Stadium Area',
+          message: 'High crowd density: 175 people',
+          value: 175,
+          threshold: 150,
+          recommendation: 'Monitor situation closely',
+          location: [12.9716, 77.5946],
+          timestamp: new Date().toISOString()
+        },
+        {
+          level: 'warning',
+          category: 'metro_flow',
+          zone: 'MG Road Metro',
+          message: 'High metro exit rate: 85 passengers/min',
+          value: 85,
+          threshold: 80,
+          recommendation: 'Prepare for crowd influx near metro',
+          location: [12.9759, 77.6069],
+          timestamp: new Date().toISOString()
+        },
+        {
+          level: 'critical',
+          category: 'crowd_density',
+          zone: 'Stadium Area',
+          message: 'Critical crowd density detected: 225 people',
+          value: 225,
+          threshold: 200,
+          recommendation: 'Immediate crowd control measures required',
+          location: [12.9716, 77.5946],
+          timestamp: new Date().toISOString()
+        }
+      ];
+      
+      testAlerts.forEach((alert, index) => {
+        setTimeout(() => {
+          addNotification(alert);
+          if (alert.level === 'critical') {
+            setAlerts([alert]);
+            audioManager.playCriticalAlert();
+            notify.error(`🚨 ${alert.message}`, 8000);
+          } else if (alert.level === 'warning') {
+            audioManager.playNotification();
+          }
+          console.log(`Test alert ${index + 1} generated:`, alert);
+        }, index * 1000);
+      });
+      
+      notify.info('🧪 Generating 3 test notifications...', 3000);
+    }, 'Test Notifications (generates 3 sample alerts)');
+    
     return () => {
       keyboardManager.destroy();
     };
-  }, [fetchSettings]);
+  }, [fetchSettings, addNotification]);
 
   // Handle quick action callbacks
   const handleQuickAction = useCallback((action) => {
@@ -351,6 +512,13 @@ function App() {
           {/* Mode Toggle */}
           <ModeToggle />
           
+          {/* Notification Bell */}
+          <NotificationBell 
+            unreadCount={unreadCount}
+            onClick={toggleNotificationHub}
+            hasNewCritical={hasNewCritical}
+          />
+          
           <div className={`status-indicator ${connectionStatus}`}>
             <span className="status-dot"></span>
             <span className="status-text">
@@ -366,8 +534,21 @@ function App() {
         </div>
       </header>
 
+      {/* Notification Hub */}
+      <NotificationHub 
+        isOpen={notificationHubOpen}
+        onClose={() => setNotificationHubOpen(false)}
+        alerts={allNotifications}
+        onMarkAsRead={markAsRead}
+        onDismiss={dismissNotification}
+        onViewOnMap={viewAlertOnMap}
+      />
+
       {/* Alert Notifications */}
-      <AlertBanner alerts={alerts} />
+      <AlertBanner 
+        alerts={alerts} 
+        onDismiss={dismissNotification}
+      />
 
       {/* Main content area */}
       <div className="main-content">

@@ -1,90 +1,66 @@
 /**
- * AlertBanner - Displays critical alerts and warnings
- * Stacks multiple alerts and allows dismissal
+ * AlertBanner - Displays only CRITICAL alerts as single-line banner
+ * Enhanced version: Shows only most recent critical alert
  */
 
 import { useState, useEffect } from 'react';
 import './AlertBanner.css';
 
-function AlertBanner({ alerts }) {
-  const [visibleAlerts, setVisibleAlerts] = useState([]);
+function AlertBanner({ alerts, onDismiss }) {
+  const [currentAlert, setCurrentAlert] = useState(null);
 
   useEffect(() => {
-    // Add new alerts to visible list with unique IDs
+    // Show only the most recent CRITICAL alert
     if (alerts && alerts.length > 0) {
-      const newAlerts = alerts.map((alert, idx) => ({
-        ...alert,
-        id: `${Date.now()}-${idx}`,
-        timestamp: alert.timestamp || new Date().toISOString()
-      }));
+      // Filter for critical alerts only
+      const criticalAlerts = alerts.filter(alert => alert.level === 'critical');
       
-      // Add to visible alerts (limit to 5 most recent)
-      setVisibleAlerts(prev => {
-        const updated = [...newAlerts, ...prev].slice(0, 5);
-        return updated;
-      });
+      if (criticalAlerts.length > 0) {
+        // Get the most recent one
+        const mostRecent = criticalAlerts[0];
+        setCurrentAlert({
+          ...mostRecent,
+          id: mostRecent.id || `${Date.now()}`,
+          timestamp: mostRecent.timestamp || new Date().toISOString()
+        });
+      } else {
+        setCurrentAlert(null);
+      }
+    } else {
+      setCurrentAlert(null);
     }
   }, [alerts]);
 
-  const dismissAlert = (alertId) => {
-    setVisibleAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  const handleDismiss = () => {
+    if (currentAlert && onDismiss) {
+      onDismiss(currentAlert.id);
+    }
+    setCurrentAlert(null);
   };
 
-  const dismissAll = () => {
-    setVisibleAlerts([]);
-  };
-
-  if (visibleAlerts.length === 0) return null;
+  if (!currentAlert) return null;
 
   return (
     <div className="alert-container">
-      <div className="alert-header">
-        <span>⚠️ Active Alerts ({visibleAlerts.length})</span>
-        <button className="alert-dismiss-all" onClick={dismissAll}>
-          Dismiss All
+      <div className={`alert-banner critical-single`}>
+        <div className="alert-icon-pulse">
+          🚨
+        </div>
+        
+        <div className="alert-content-inline">
+          <span className="alert-level-badge">CRITICAL</span>
+          <span className="alert-zone-inline">📍 {currentAlert.zone}</span>
+          <span className="alert-message-inline">{currentAlert.message}</span>
+        </div>
+        
+        <button 
+          className="alert-dismiss-btn" 
+          onClick={handleDismiss}
+          aria-label="Dismiss critical alert"
+          title="Dismiss alert"
+        >
+          ✕
         </button>
-      </div>
-      
-      <div className="alert-list">
-        {visibleAlerts.map((alert) => (
-          <div 
-            key={alert.id} 
-            className={`alert-banner ${alert.level}`}
-          >
-            <div className="alert-icon">
-              {alert.level === 'critical' ? '🚨' : '⚠️'}
-            </div>
-            
-            <div className="alert-content">
-              <div className="alert-title">
-                <span className="alert-level">{alert.level.toUpperCase()}</span>
-                <span className="alert-category">{alert.category.replace(/_/g, ' ')}</span>
-              </div>
-              
-              <div className="alert-zone">{alert.zone}</div>
-              
-              <div className="alert-message">{alert.message}</div>
-              
-              {alert.recommendation && (
-                <div className="alert-recommendation">
-                  💡 {alert.recommendation}
-                </div>
-              )}
-              
-              <div className="alert-time">
-                {new Date(alert.timestamp).toLocaleTimeString()}
-              </div>
-            </div>
-            
-            <button 
-              className="alert-dismiss" 
-              onClick={() => dismissAlert(alert.id)}
-              aria-label="Dismiss alert"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
       </div>
     </div>
   );
