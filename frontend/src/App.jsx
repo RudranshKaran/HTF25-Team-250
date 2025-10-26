@@ -49,6 +49,7 @@ function App() {
   
   // Phase 3: AI & Simulations
   const [metroData, setMetroData] = useState(null);
+  const [multiMetroData, setMultiMetroData] = useState(null); // NEW: Multi-metro data
   const [densityData, setDensityData] = useState(null);
   const [multiZoneDensityData, setMultiZoneDensityData] = useState(null); // NEW: Multi-zone data
   const [alerts, setAlerts] = useState([]);
@@ -118,9 +119,14 @@ function App() {
             setWeatherData(data);
             break;
           case 'metro_update':
-            // Update metro flow data
+            // Update metro flow data (single station - legacy)
             console.log(`🚇 Metro: Entry ${data.entry_rate}/min, Exit ${data.exit_rate}/min`);
             setMetroData(data);
+            break;
+          case 'multi_metro_update':
+            // Update multi-metro data (all stations)
+            console.log(`🚇 Multi-Metro: ${data.summary?.total_stations || 0} stations, Total Flow: ${data.summary?.total_flow}/min`);
+            setMultiMetroData(data);
             break;
           case 'density_update':
             // Update crowd density data (legacy single-zone format)
@@ -628,6 +634,7 @@ function App() {
                 firstResponders={firstResponders}
                 weatherData={weatherData}
                 metroData={metroData}
+                multiMetroData={multiMetroData}
                 alerts={alerts}
                 messages={messages}
               />
@@ -653,6 +660,7 @@ function App() {
               <FleetManagementView 
                 busData={busData}
                 metroData={metroData}
+                multiMetroData={multiMetroData}
                 firstResponders={firstResponders}
               />
             )}

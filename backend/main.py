@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from app.services import (
     fetch_bmtc_bus_data, fetch_weather_data, 
     format_bus_summary, format_weather_summary,
-    simulate_metro_flow, simulate_crowd_density, 
+    simulate_metro_flow, simulate_all_metro_stations, simulate_crowd_density, 
     check_alerts, format_metro_summary, format_density_summary,
     history_manager
 )
@@ -170,11 +170,12 @@ async def metro_simulation_task():
     global latest_metro_data
     await asyncio.sleep(7)  # Initial delay
     
-    print("Metro simulation task started")
+    print("Metro simulation task started - ALL STATIONS")
     
     while True:
         if manager.active_connections and not config_manager.simulations_paused:
             try:
+                # Get single-station data for backward compatibility
                 metro_data = simulate_metro_flow()
                 latest_metro_data = metro_data
                 config_manager.increment_message_count()
@@ -185,10 +186,20 @@ async def metro_simulation_task():
                 # Add trend to data
                 metro_data['trend'] = history_manager.get_metro_trend()
                 
+                # Broadcast single-station data (legacy)
                 await manager.broadcast(metro_data)
-                print(f"🚇 Metro broadcast: {format_metro_summary(metro_data)}")
+                print(f"🚇 Metro (MG Road): {format_metro_summary(metro_data)}")
                 
-                # Check alerts
+                # Get multi-station data
+                multi_metro_data = simulate_all_metro_stations()
+                config_manager.increment_message_count()
+                
+                # Broadcast multi-station data
+                await manager.broadcast(multi_metro_data)
+                summary = multi_metro_data['summary']
+                print(f"🚇 Multi-Metro: {summary['total_stations']} stations, Total Flow: {summary['total_flow']}/min, Phase: {summary['crowd_phase']}")
+                
+                # Check alerts (using MG Road data for now)
                 if latest_density_data:
                     alerts = check_alerts(latest_density_data, metro_data)
                     for alert in alerts:

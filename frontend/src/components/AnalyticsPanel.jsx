@@ -10,9 +10,43 @@ import {
 } from 'recharts';
 import './AnalyticsPanel.css';
 
-function AnalyticsPanel({ densityData, metroData, embedded = false }) {
+function AnalyticsPanel({ densityData, metroData, embedded = false, selectedZone = 'all' }) {
   const [chartData, setChartData] = useState({ density_chart: [], metro_chart: [] });
   const [isExpanded, setIsExpanded] = useState(embedded ? true : false);
+  
+  // Extract current density value (handle both old single-zone and new multi-zone format)
+  const getCurrentDensity = () => {
+    if (!densityData) return null;
+    
+    // New multi-zone format
+    if (densityData.zones) {
+      if (selectedZone && selectedZone !== 'all' && densityData.zones[selectedZone]) {
+        return densityData.zones[selectedZone].max_density;
+      }
+      // For 'all', use global max from summary
+      return densityData.summary?.max_density_overall || 0;
+    }
+    
+    // Old single-zone format (backward compatibility)
+    return densityData.max_density || 0;
+  };
+  
+  // Extract current trend (handle both formats)
+  const getCurrentTrend = () => {
+    if (!densityData) return null;
+    
+    // New multi-zone format
+    if (densityData.zones) {
+      if (selectedZone && selectedZone !== 'all' && densityData.zones[selectedZone]) {
+        return densityData.zones[selectedZone].trend;
+      }
+      // For 'all', use general trend
+      return densityData.trend || 'stable';
+    }
+    
+    // Old format
+    return densityData.trend;
+  };
 
   // Fetch chart data from backend
   useEffect(() => {
@@ -72,9 +106,9 @@ function AnalyticsPanel({ densityData, metroData, embedded = false }) {
           <div className="chart-section">
             <div className="chart-header">
               <h4>🔥 Crowd Density Over Time</h4>
-              {densityData?.trend && (
-                <span className="trend-indicator" style={{ color: getTrendColor(densityData.trend) }}>
-                  {getTrendEmoji(densityData.trend)} {densityData.trend.toUpperCase()}
+              {getCurrentTrend() && (
+                <span className="trend-indicator" style={{ color: getTrendColor(getCurrentTrend()) }}>
+                  {getTrendEmoji(getCurrentTrend())} {getCurrentTrend().toUpperCase()}
                 </span>
               )}
             </div>
@@ -185,23 +219,27 @@ function AnalyticsPanel({ densityData, metroData, embedded = false }) {
             )}
           </div>
 
-          {/* Prediction */}
-          {densityData?.prediction && (
-            <div className="prediction-alert">
-              <div className="prediction-icon">🔮</div>
-              <div className="prediction-content">
-                <div className="prediction-title">Predictive Alert</div>
-                <div className="prediction-message">
-                  {densityData.prediction.level === 'warning' ? '⚠️ WARNING' : '🚨 CRITICAL'} threshold ({densityData.prediction.threshold}) 
-                  predicted in ~<strong>{densityData.prediction.estimated_minutes} minutes</strong>
-                </div>
-                <div className="prediction-details">
-                  Current: {densityData.prediction.current_density} | 
-                  Rate: +{densityData.prediction.rate}/update
+          {/* Prediction - Handle multi-zone format */}
+          {(() => {
+            const prediction = densityData?.prediction || 
+                             (densityData?.zones && selectedZone !== 'all' && densityData.zones[selectedZone]?.prediction);
+            return prediction ? (
+              <div className="prediction-alert">
+                <div className="prediction-icon">🔮</div>
+                <div className="prediction-content">
+                  <div className="prediction-title">Predictive Alert</div>
+                  <div className="prediction-message">
+                    {prediction.level === 'warning' ? '⚠️ WARNING' : '🚨 CRITICAL'} threshold ({prediction.threshold}) 
+                    predicted in ~<strong>{prediction.estimated_minutes} minutes</strong>
+                  </div>
+                  <div className="prediction-details">
+                    Current: {prediction.current_density} | 
+                    Rate: +{prediction.rate}/update
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            ) : null;
+          })()}
         </div>
       )}
     </div>

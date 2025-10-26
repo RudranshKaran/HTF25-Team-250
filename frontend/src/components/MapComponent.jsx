@@ -63,67 +63,111 @@ const responderIcons = {
 // Bengaluru coordinates (M. Chinnaswamy Stadium area)
 const BENGALURU_CENTER = [12.9791, 77.5993];
 const CHINNASWAMY_STADIUM = [12.9789, 77.5993];
-const MG_ROAD_METRO = [12.9756, 77.6057];
 
-// Heatmap Layer Component
-function HeatmapLayer({ densityData }) {
+// Metro Stations (Namma Metro)
+const MG_ROAD_METRO = [12.9756, 77.6057]; // Blue/Purple Line interchange
+const MAJESTIC_METRO = [12.9767, 77.5713]; // Majestic Interchange (Purple/Green)
+const INDIRANAGAR_METRO = [12.9784, 77.6408]; // Purple Line
+const ELECTRONIC_CITY_METRO = [12.8450, 77.6628]; // Green Line terminus
+
+// Heatmap Layer Component - MULTI-ZONE SUPPORT
+function HeatmapLayer({ densityData, selectedZone = 'all' }) {
   const map = useMap();
   const heatLayerRef = useRef(null);
 
   useEffect(() => {
-    if (!densityData || !densityData.grid) return;
+    if (!densityData) return;
 
     // Remove existing heat layer
     if (heatLayerRef.current) {
       map.removeLayer(heatLayerRef.current);
     }
 
-    // Convert grid to heatmap points
     const heatPoints = [];
-    const { grid, center_location, grid_size } = densityData;
-    
-    // Safety check: ensure center_location exists
-    if (!center_location || !Array.isArray(center_location) || center_location.length < 2) {
-      console.warn('⚠️ Heatmap: Invalid center_location, skipping update');
+    let maxDensityGlobal = 0;
+
+    // Check if we have multi-zone data
+    if (densityData.zones) {
+      // NEW MULTI-ZONE FORMAT
+      console.log('🔥 Multi-Zone Heatmap Update - Zones:', Object.keys(densityData.zones).length);
+      
+      // Process each zone
+      Object.entries(densityData.zones).forEach(([zoneId, zoneData]) => {
+        // Skip zones not selected (unless 'all' is selected)
+        if (selectedZone !== 'all' && selectedZone !== zoneId) return;
+
+        const { grid, center } = zoneData;
+        const grid_size = 10; // Standard grid size
+        
+        if (!grid || !center) {
+          console.warn(`⚠️ Zone ${zoneId} missing grid or center`);
+          return;
+        }
+
+        // Find max density for this zone
+        let maxDensity = 0;
+        grid.forEach(row => {
+          row.forEach(density => {
+            if (density > maxDensity) maxDensity = density;
+            if (density > maxDensityGlobal) maxDensityGlobal = density;
+          });
+        });
+
+        // Convert grid to heatmap points
+        grid.forEach((row, i) => {
+          row.forEach((density, j) => {
+            if (density > 5) {
+              // Convert grid position to lat/lon
+              const lat_offset = (i - grid_size / 2) * 0.002;
+              const lon_offset = (j - grid_size / 2) * 0.002;
+              const lat = center[0] + lat_offset;
+              const lon = center[1] + lon_offset;
+              
+              // Normalize intensity
+              const normalizedIntensity = Math.sqrt(density / Math.max(maxDensity, 100));
+              
+              heatPoints.push([lat, lon, normalizedIntensity]);
+            }
+          });
+        });
+      });
+
+      console.log(`🗺️ Multi-Zone Heatmap: ${heatPoints.length} points, Max Density: ${maxDensityGlobal}`);
+    } 
+    else if (densityData.grid && densityData.center_location) {
+      // OLD SINGLE-ZONE FORMAT (backward compatibility)
+      console.log('🔥 Single-Zone Heatmap Update (Legacy)');
+      
+      const { grid, center_location, grid_size = 10 } = densityData;
+      
+      // Find max density
+      grid.forEach(row => {
+        row.forEach(density => {
+          if (density > maxDensityGlobal) maxDensityGlobal = density;
+        });
+      });
+
+      // Convert grid to heatmap points
+      grid.forEach((row, i) => {
+        row.forEach((density, j) => {
+          if (density > 5) {
+            const lat_offset = (i - grid_size / 2) * 0.002;
+            const lon_offset = (j - grid_size / 2) * 0.002;
+            const lat = center_location[0] + lat_offset;
+            const lon = center_location[1] + lon_offset;
+            
+            const normalizedIntensity = Math.sqrt(density / Math.max(maxDensityGlobal, 100));
+            
+            heatPoints.push([lat, lon, normalizedIntensity]);
+          }
+        });
+      });
+
+      console.log(`🗺️ Single-Zone Heatmap: ${heatPoints.length} points`);
+    } else {
+      console.warn('⚠️ Heatmap: Invalid data structure', densityData);
       return;
     }
-    
-    // Find max density for normalization
-    let maxDensity = 0;
-    grid.forEach(row => {
-      row.forEach(density => {
-        if (density > maxDensity) maxDensity = density;
-      });
-    });
-    
-    console.log('🔥 Heatmap Update:', {
-      maxDensity,
-      avgDensity: densityData.avg_density,
-      gridSize: grid_size,
-      isEventTime: densityData.is_event_time
-    });
-    
-    grid.forEach((row, i) => {
-      row.forEach((density, j) => {
-        // Show all densities > 5 for better visualization
-        if (density > 5) {
-          // Convert grid position to lat/lon
-          const lat_offset = (i - grid_size / 2) * 0.002;
-          const lon_offset = (j - grid_size / 2) * 0.002;
-          const lat = center_location[0] + lat_offset;
-          const lon = center_location[1] + lon_offset;
-          
-          // Normalize intensity to 0-1 range based on actual max
-          // Use square root for better visual distribution
-          const normalizedIntensity = Math.sqrt(density / Math.max(maxDensity, 100));
-          
-          // Heatmap expects [lat, lon, intensity]
-          heatPoints.push([lat, lon, normalizedIntensity]);
-        }
-      });
-    });
-
-    console.log('🗺️ Heatmap points:', heatPoints.length);
 
     // Create heat layer with improved settings
     if (heatPoints.length > 0) {
@@ -149,7 +193,7 @@ function HeatmapLayer({ densityData }) {
         map.removeLayer(heatLayerRef.current);
       }
     };
-  }, [densityData, map]);
+  }, [densityData, selectedZone, map]);
 
   return null;
 }
@@ -183,6 +227,7 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
   const [buses, setBuses] = useState([]);
   const [hotspots, setHotspots] = useState([]);
   const [responders, setResponders] = useState([]);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
 
   // Zone definitions with Metro Line colors
   const zones = {
@@ -211,14 +256,40 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
 
   // Update hotspots when density data arrives
   useEffect(() => {
-    if (densityData && densityData.hotspots) {
-      console.log(`🔥 Hotspots received: ${densityData.hotspots.length} hotspots`);
-      console.log('Hotspot data:', densityData.hotspots);
+    if (!densityData) {
+      setHotspots([]);
+      return;
+    }
+
+    // Multi-zone format: extract hotspots from all zones
+    if (densityData.zones) {
+      const allHotspots = [];
+      Object.entries(densityData.zones).forEach(([zoneId, zoneData]) => {
+        // Skip zones not selected (unless 'all' is selected)
+        if (selectedZone !== 'all' && selectedZone !== zoneId) return;
+        
+        if (zoneData.hotspots && Array.isArray(zoneData.hotspots)) {
+          // Add zone ID to each hotspot for tracking
+          const zoneHotspots = zoneData.hotspots.map(h => ({
+            ...h,
+            zone: zoneId,
+            zoneName: zoneData.zone_name || zoneId
+          }));
+          allHotspots.push(...zoneHotspots);
+        }
+      });
+      console.log(`🔥 Multi-Zone Hotspots: ${allHotspots.length} across ${Object.keys(densityData.zones).length} zones`);
+      setHotspots(allHotspots);
+    } 
+    // Single-zone format (backward compatibility)
+    else if (densityData.hotspots) {
+      console.log(`🔥 Single-Zone Hotspots: ${densityData.hotspots.length}`);
       setHotspots(densityData.hotspots);
     } else {
-      console.warn('⚠️ No hotspot data in densityData:', densityData);
+      console.warn('⚠️ No hotspot data in densityData');
+      setHotspots([]);
     }
-  }, [densityData]);
+  }, [densityData, selectedZone]);
 
   // Update first responders when new data arrives
   useEffect(() => {
@@ -242,8 +313,8 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
           maxZoom={19}
         />
 
-        {/* Crowd Density Heatmap */}
-        <HeatmapLayer densityData={densityData} />
+        {/* Crowd Density Heatmap - Multi-Zone */}
+        <HeatmapLayer densityData={densityData} selectedZone={selectedZone} />
 
         {/* Zone Center Controller */}
         <ZoneCenterController selectedZone={selectedZone} zones={zones} />
@@ -280,34 +351,82 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
           </Popup>
         </Circle>
 
-        {/* MG Road Metro Station */}
+        {/* Metro Stations with Monitoring Circles */}
+        
+        {/* MG Road Metro Station - Blue/Purple Line */}
         <Marker position={MG_ROAD_METRO}>
           <Popup>
             <div className="custom-popup">
               <h3>🚇 MG Road Metro Station</h3>
-              <p>High traffic transit hub</p>
-              <p>Purple & Green Line interchange</p>
+              <p><strong>Lines:</strong> Blue & Purple Line interchange</p>
+              <p><strong>Type:</strong> High traffic transit hub</p>
+              <p><strong>Facilities:</strong> Underground station with multiple exits</p>
             </div>
           </Popup>
         </Marker>
-
-        {/* Metro Station Monitoring Circle */}
         <Circle
           center={MG_ROAD_METRO}
           radius={300}
-          pathOptions={{
-            color: '#4ecdc4',
-            fillColor: '#4ecdc4',
-            fillOpacity: 0.15,
-            weight: 2,
-          }}
+          pathOptions={{ color: '#28458C', fillColor: '#28458C', fillOpacity: 0.15, weight: 2 }}
         >
+          <Popup><strong>MG Road Metro Transit Zone</strong><p>300m radius</p></Popup>
+        </Circle>
+
+        {/* Majestic Metro Station - Purple/Green Line */}
+        <Marker position={MAJESTIC_METRO}>
           <Popup>
             <div className="custom-popup">
-              <strong>Metro Transit Zone</strong>
-              <p>300m radius monitoring</p>
+              <h3>🚇 Majestic Metro Station</h3>
+              <p><strong>Lines:</strong> Purple & Green Line interchange</p>
+              <p><strong>Type:</strong> Major interchange hub</p>
+              <p><strong>Adjacent:</strong> Kempegowda Bus Station, Railway Station</p>
             </div>
           </Popup>
+        </Marker>
+        <Circle
+          center={MAJESTIC_METRO}
+          radius={400}
+          pathOptions={{ color: '#FF6300', fillColor: '#FF6300', fillOpacity: 0.15, weight: 2 }}
+        >
+          <Popup><strong>Majestic Transit Zone</strong><p>400m radius</p></Popup>
+        </Circle>
+
+        {/* Indiranagar Metro Station - Purple Line */}
+        <Marker position={INDIRANAGAR_METRO}>
+          <Popup>
+            <div className="custom-popup">
+              <h3>🚇 Indiranagar Metro Station</h3>
+              <p><strong>Line:</strong> Purple Line</p>
+              <p><strong>Type:</strong> Commercial & residential hub</p>
+              <p><strong>Area:</strong> Popular shopping and dining district</p>
+            </div>
+          </Popup>
+        </Marker>
+        <Circle
+          center={INDIRANAGAR_METRO}
+          radius={300}
+          pathOptions={{ color: '#8C2877', fillColor: '#8C2877', fillOpacity: 0.15, weight: 2 }}
+        >
+          <Popup><strong>Indiranagar Metro Transit Zone</strong><p>300m radius</p></Popup>
+        </Circle>
+
+        {/* Electronic City Metro Station - Green Line */}
+        <Marker position={ELECTRONIC_CITY_METRO}>
+          <Popup>
+            <div className="custom-popup">
+              <h3>🚇 Electronic City Metro Station</h3>
+              <p><strong>Line:</strong> Green Line terminus</p>
+              <p><strong>Type:</strong> IT corridor terminus</p>
+              <p><strong>Area:</strong> Major tech hub with high office density</p>
+            </div>
+          </Popup>
+        </Marker>
+        <Circle
+          center={ELECTRONIC_CITY_METRO}
+          radius={500}
+          pathOptions={{ color: '#009933', fillColor: '#009933', fillOpacity: 0.15, weight: 2 }}
+        >
+          <Popup><strong>Electronic City Metro Transit Zone</strong><p>500m radius</p></Popup>
         </Circle>
 
         {/* Multi-Zone Circles */}
@@ -440,49 +559,58 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
         })}
       </MapContainer>
 
-      {/* Map Legend */}
-      <div className="map-legend">
-        <h4>Map Legend</h4>
-        <div className="legend-item">
-          <span className="legend-color" style={{ background: '#ff6b6b' }}></span>
-          <span>Event Zone (500m)</span>
+      {/* Map Legend - Collapsible */}
+      <div className={`map-legend ${legendCollapsed ? 'collapsed' : ''}`}>
+        <div className="legend-header" onClick={() => setLegendCollapsed(!legendCollapsed)}>
+          <h4>Map Legend</h4>
+          <button className="legend-toggle">
+            {legendCollapsed ? '▲' : '▼'}
+          </button>
         </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ background: '#4ecdc4' }}></span>
-          <span>Metro Transit Zone (300m)</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">📍</span>
-          <span>Key Locations</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🚌</span>
-          <span>BMTC Buses ({buses.length})</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🚓</span>
-          <span>Police ({responders.filter(r => r.type === 'police').length})</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🚑</span>
-          <span>Ambulance ({responders.filter(r => r.type === 'ambulance').length})</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🚒</span>
-          <span>Fire Trucks ({responders.filter(r => r.type === 'fire').length})</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🚨</span>
-          <span>Emergency ({responders.filter(r => r.type === 'emergency').length})</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color heatmap-gradient"></span>
-          <span>Crowd Density</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon">🔥</span>
-          <span>Hotspots ({hotspots.length})</span>
-        </div>
+        {!legendCollapsed && (
+          <div className="legend-content">
+            <div className="legend-item">
+              <span className="legend-color" style={{ background: '#ff6b6b' }}></span>
+              <span>Event Zone (500m)</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color" style={{ background: '#28458C' }}></span>
+              <span>Metro Stations (4)</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">📍</span>
+              <span>Key Locations</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🚌</span>
+              <span>BMTC Buses ({buses.length})</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🚓</span>
+              <span>Police ({responders.filter(r => r.type === 'police').length})</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🚑</span>
+              <span>Ambulance ({responders.filter(r => r.type === 'ambulance').length})</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🚒</span>
+              <span>Fire Trucks ({responders.filter(r => r.type === 'fire').length})</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🚨</span>
+              <span>Emergency ({responders.filter(r => r.type === 'emergency').length})</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color heatmap-gradient"></span>
+              <span>Crowd Density</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon">🔥</span>
+              <span>Hotspots ({hotspots.length})</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Map Overlay Info */}
