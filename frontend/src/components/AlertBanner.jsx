@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import notificationPreferences from '../utils/notificationPreferences';
 import './AlertBanner.css';
 
 function AlertBanner({ alerts, onDismiss }) {
@@ -28,10 +29,11 @@ function AlertBanner({ alerts, onDismiss }) {
         if (!currentAlert || currentAlert.id !== newAlert.id) {
           setCurrentAlert(newAlert);
           
-          // Auto-dismiss after 30 seconds
+          // Auto-dismiss after configured time (from user preferences)
+          const dismissTime = notificationPreferences.getBannerAutoDismiss();
           const timer = setTimeout(() => {
             setCurrentAlert(null);
-          }, 30000);
+          }, dismissTime);
           
           return () => clearTimeout(timer);
         }

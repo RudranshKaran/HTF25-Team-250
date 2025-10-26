@@ -20,6 +20,7 @@ import CrowdRiskIndicator from './components/CrowdRiskIndicator';
 import InsightsDock from './components/InsightsDock';
 import audioManager from './utils/audioManager';
 import keyboardManager from './utils/keyboardShortcuts';
+import notificationPreferences from './utils/notificationPreferences';
 
 // New Layout Components
 import Sidebar from './components/layout/Sidebar';
@@ -126,28 +127,37 @@ function App() {
             setDensityData(data);
             break;
           case 'alert':
-            // Enhanced alert routing with deduplication
+            // Enhanced alert routing with deduplication and user preferences
             console.log(`⚠️ ${data.level.toUpperCase()} ALERT: ${data.message}`);
             
             // Check if this is a duplicate alert (same category, zone, level)
             const alertKey = `${data.category}-${data.zone}-${data.level}`;
             const now = Date.now();
             const lastAlertTime = alertDedupeMap.current.get(alertKey);
-            const isDuplicate = lastAlertTime && (now - lastAlertTime.timestamp) < 60000; // 60 seconds (1 minute)
+            const dedupeWindow = notificationPreferences.getDeduplicationWindow();
+            const isDuplicate = lastAlertTime && (now - lastAlertTime.timestamp) < dedupeWindow;
             
             // Add to notification hub (with deduplication)
             addNotification(data);
             
-            // Route based on severity (only if NOT a duplicate)
+            // Route based on severity and user preferences (only if NOT a duplicate)
             if (data.level === 'critical' && !isDuplicate) {
               // CRITICAL: Full alert experience (only for NEW critical alerts)
-              setAlerts(prev => [data, ...prev].slice(0, 1)); // Keep only most recent critical for banner
-              audioManager.playCriticalAlert(); // 3 urgent beeps
-              notify.error(`🚨 ${data.message}`, 8000); // Toast popup
+              if (notificationPreferences.shouldShowBanner()) {
+                setAlerts(prev => [data, ...prev].slice(0, 1)); // Keep only most recent critical for banner
+              }
+              if (notificationPreferences.isCriticalAlertSoundEnabled()) {
+                audioManager.playCriticalAlert(); // 3 urgent beeps
+              }
+              if (notificationPreferences.shouldShowToast()) {
+                notify.error(`🚨 ${data.message}`, 8000); // Toast popup
+              }
               
             } else if (data.level === 'warning' && !isDuplicate) {
               // WARNING: Silent to hub, gentle audio feedback only (only for NEW warnings)
-              audioManager.playNotification(); // Gentle single beep
+              if (notificationPreferences.isWarningAlertSoundEnabled()) {
+                audioManager.playNotification(); // Gentle single beep
+              }
               // NO toast popup, NO banner - warnings go to hub only
               
             } else if (!isDuplicate) {
@@ -221,10 +231,11 @@ function App() {
   const addNotification = useCallback((alert) => {
     const alertKey = `${alert.category}-${alert.zone}-${alert.level}`;
     const now = Date.now();
+    const dedupeWindow = notificationPreferences.getDeduplicationWindow();
     
-    // Check for duplicate within last 60 seconds (1 minute)
+    // Check for duplicate within configured deduplication window
     const existing = alertDedupeMap.current.get(alertKey);
-    if (existing && (now - existing.timestamp) < 60000) {
+    if (existing && (now - existing.timestamp) < dedupeWindow) {
       // Update existing notification instead of creating new one
       setAllNotifications(prev => 
         prev.map(notif => 
@@ -273,21 +284,23 @@ function App() {
       }
     });
     
-    // Auto-mark notifications older than 2 minutes as read
-    setTimeout(() => {
-      setAllNotifications(prev => 
-        prev.map(notif => {
-          const notifTime = new Date(notif.timestamp).getTime();
-          const age = now - notifTime;
-          // Auto-read if older than 2 minutes and same alert is still coming
-          if (!notif.read && age > 120000) {
-            setUnreadCount(c => Math.max(0, c - 1));
-            return { ...notif, read: true };
-          }
-          return notif;
-        })
-      );
-    }, 2000);
+    // Auto-mark notifications older than 2 minutes as read (if enabled in preferences)
+    if (notificationPreferences.shouldAutoReadOld()) {
+      setTimeout(() => {
+        setAllNotifications(prev => 
+          prev.map(notif => {
+            const notifTime = new Date(notif.timestamp).getTime();
+            const age = now - notifTime;
+            // Auto-read if older than 2 minutes and same alert is still coming
+            if (!notif.read && age > 120000) {
+              setUnreadCount(c => Math.max(0, c - 1));
+              return { ...notif, read: true };
+            }
+            return notif;
+          })
+        );
+      }, 2000);
+    }
   }, []);
 
   // Mark notifications as read

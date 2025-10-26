@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ControlPanel from '../ControlPanel';
 import SystemLogs from '../SystemLogs';
+import notificationPreferences from '../../utils/notificationPreferences';
+import { notify } from '../NotificationCenter';
 import './SystemControlView.css';
 
 const SystemControlView = ({ 
@@ -10,6 +12,56 @@ const SystemControlView = ({
   onTestMessage 
 }) => {
   const [activeTab, setActiveTab] = useState('settings');
+  const [preferences, setPreferences] = useState(notificationPreferences.getPreferences());
+
+  // Subscribe to preference changes
+  useEffect(() => {
+    const unsubscribe = notificationPreferences.subscribe((newPreferences) => {
+      setPreferences(newPreferences);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Preference handlers
+  const handleSoundEnabledChange = (e) => {
+    notificationPreferences.setSoundEnabled(e.target.checked);
+    notify.success(`Sound alerts ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleCriticalSoundChange = (e) => {
+    notificationPreferences.setCriticalAlertSound(e.target.checked);
+    notify.success(`Critical alert sounds ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleWarningSoundChange = (e) => {
+    notificationPreferences.setWarningAlertSound(e.target.checked);
+    notify.success(`Warning alert sounds ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleBannerChange = (e) => {
+    notificationPreferences.setShowBanner(e.target.checked);
+    notify.success(`Banner alerts ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleToastChange = (e) => {
+    notificationPreferences.setShowToast(e.target.checked);
+    notify.success(`Toast notifications ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleAutoReadChange = (e) => {
+    notificationPreferences.setAutoReadOld(e.target.checked);
+    notify.success(`Auto-read old notifications ${e.target.checked ? 'enabled' : 'disabled'}`, 2000);
+  };
+
+  const handleDeduplicationChange = (e) => {
+    notificationPreferences.setDeduplicationWindow(parseInt(e.target.value));
+    notify.success(`Deduplication window set to ${e.target.value} seconds`, 2000);
+  };
+
+  const handleBannerDismissChange = (e) => {
+    notificationPreferences.setBannerAutoDismiss(parseInt(e.target.value));
+    notify.success(`Banner auto-dismiss set to ${e.target.value} seconds`, 2000);
+  };
 
   return (
     <div className="system-control-view">
@@ -102,19 +154,33 @@ const SystemControlView = ({
                 <h3>🔊 Sound Settings</h3>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.sound.enabled}
+                      onChange={handleSoundEnabledChange}
+                    />
                     <span>Enable sound alerts</span>
                   </label>
                 </div>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.sound.criticalAlerts}
+                      onChange={handleCriticalSoundChange}
+                      disabled={!preferences.sound.enabled}
+                    />
                     <span>Critical alerts (3 beeps)</span>
                   </label>
                 </div>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.sound.warningAlerts}
+                      onChange={handleWarningSoundChange}
+                      disabled={!preferences.sound.enabled}
+                    />
                     <span>Warning alerts (1 beep)</span>
                   </label>
                 </div>
@@ -124,19 +190,31 @@ const SystemControlView = ({
                 <h3>🖥️ Display Settings</h3>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.display.showBanner}
+                      onChange={handleBannerChange}
+                    />
                     <span>Show banner for critical alerts</span>
                   </label>
                 </div>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.display.showToast}
+                      onChange={handleToastChange}
+                    />
                     <span>Show toast notifications</span>
                   </label>
                 </div>
                 <div className="preference-item">
                   <label>
-                    <input type="checkbox" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      checked={preferences.display.autoReadOld}
+                      onChange={handleAutoReadChange}
+                    />
                     <span>Auto-read old notifications (2 min)</span>
                   </label>
                 </div>
@@ -147,9 +225,12 @@ const SystemControlView = ({
                 <div className="preference-item">
                   <label>
                     <span>Deduplication window:</span>
-                    <select>
+                    <select 
+                      value={preferences.timing.deduplicationWindow}
+                      onChange={handleDeduplicationChange}
+                    >
                       <option value="30">30 seconds</option>
-                      <option value="60" selected>60 seconds</option>
+                      <option value="60">60 seconds</option>
                       <option value="120">2 minutes</option>
                     </select>
                   </label>
@@ -157,9 +238,12 @@ const SystemControlView = ({
                 <div className="preference-item">
                   <label>
                     <span>Banner auto-dismiss:</span>
-                    <select>
+                    <select 
+                      value={preferences.timing.bannerAutoDismiss}
+                      onChange={handleBannerDismissChange}
+                    >
                       <option value="15">15 seconds</option>
-                      <option value="30" selected>30 seconds</option>
+                      <option value="30">30 seconds</option>
                       <option value="60">60 seconds</option>
                     </select>
                   </label>
