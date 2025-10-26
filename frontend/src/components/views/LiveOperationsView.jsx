@@ -13,6 +13,7 @@ const LiveOperationsView = ({
   firstResponders, 
   weatherData, 
   metroData,
+  multiMetroData,
   alerts,
   messages
 }) => {
@@ -116,7 +117,7 @@ const LiveOperationsView = ({
       <div className="operations-map-area">
         <MapComponent 
           busData={busData} 
-          densityData={zoneDensityData} 
+          densityData={multiZoneDensityData || zoneDensityData}
           firstResponders={firstResponders}
           selectedZone={selectedZone}
         />
@@ -134,9 +135,44 @@ const LiveOperationsView = ({
           <WeatherWidget weatherData={weatherData} />
         </div>
 
-        {/* Metro Flow Widget */}
+        {/* Metro Flow Widget(s) */}
         <div className="operations-card metro-card">
-          <MetroFlowWidget metroData={metroData} />
+          <h3 className="card-title">🚇 Metro Stations</h3>
+          {multiMetroData && multiMetroData.stations ? (
+            <div className="metro-stations-grid">
+              {multiMetroData.stations.map((station, idx) => (
+                <div key={station.id || idx} className="mini-metro-widget">
+                  <div className="mini-metro-header">
+                    <span className="metro-station-name">{station.station}</span>
+                    <span className="metro-line-badge" style={{ backgroundColor: station.color }}>
+                      {station.line}
+                    </span>
+                  </div>
+                  <div className="mini-metro-stats">
+                    <div className="mini-stat">
+                      <span className="mini-stat-label">Entry</span>
+                      <span className="mini-stat-value">{station.entry_rate}/m</span>
+                    </div>
+                    <div className="mini-stat">
+                      <span className="mini-stat-label">Exit</span>
+                      <span className="mini-stat-value">{station.exit_rate}/m</span>
+                    </div>
+                    <div className="mini-stat">
+                      <span className="mini-stat-label">Total</span>
+                      <span className="mini-stat-value">{station.total_flow}/m</span>
+                    </div>
+                  </div>
+                  <div className="mini-metro-footer">
+                    <span className={`mini-status ${station.status}`}>{station.status}</span>
+                    <span className="mini-capacity">{station.capacity_percent}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Fallback to single metro widget
+            <MetroFlowWidget metroData={metroData} />
+          )}
         </div>
 
         {/* Quick Stats Card */}
