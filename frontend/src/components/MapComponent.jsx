@@ -212,7 +212,11 @@ function MapComponent({ busData, densityData, firstResponders, selectedZone = 'a
   // Update hotspots when density data arrives
   useEffect(() => {
     if (densityData && densityData.hotspots) {
+      console.log(`🔥 Hotspots received: ${densityData.hotspots.length} hotspots`);
+      console.log('Hotspot data:', densityData.hotspots);
       setHotspots(densityData.hotspots);
+    } else {
+      console.warn('⚠️ No hotspot data in densityData:', densityData);
     }
   }, [densityData]);
 
