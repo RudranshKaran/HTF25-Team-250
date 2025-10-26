@@ -50,6 +50,7 @@ function App() {
   // Phase 3: AI & Simulations
   const [metroData, setMetroData] = useState(null);
   const [densityData, setDensityData] = useState(null);
+  const [multiZoneDensityData, setMultiZoneDensityData] = useState(null); // NEW: Multi-zone data
   const [alerts, setAlerts] = useState([]);
   const [firstResponders, setFirstResponders] = useState(null);
   
@@ -129,8 +130,10 @@ function App() {
           case 'multi_zone_density_update':
             // Update multi-zone density data (new format)
             console.log(`🔥 Multi-Zone: ${data.summary?.total_zones || 0} zones monitored`);
-            // Store multi-zone data for future use (currently using legacy format for display)
-            // You can add state management for this later if needed
+            setMultiZoneDensityData(data);
+            
+            // Also update densityData based on selectedZone for the heatmap
+            // This will be handled in LiveOperationsView
             break;
           case 'alert':
             // Enhanced alert routing with deduplication and user preferences
@@ -618,6 +621,7 @@ function App() {
               <LiveOperationsView 
                 busData={busData}
                 densityData={densityData}
+                multiZoneDensityData={multiZoneDensityData}
                 firstResponders={firstResponders}
                 weatherData={weatherData}
                 metroData={metroData}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MapComponent from '../MapComponent';
 import CrowdRiskIndicator from '../CrowdRiskIndicator';
 import WeatherWidget from '../WeatherWidget';
@@ -9,6 +9,7 @@ import './LiveOperationsView.css';
 const LiveOperationsView = ({ 
   busData, 
   densityData, 
+  multiZoneDensityData,
   firstResponders, 
   weatherData, 
   metroData,
@@ -17,12 +18,56 @@ const LiveOperationsView = ({
 }) => {
   // Zone state management
   const [selectedZone, setSelectedZone] = useState('all');
+  const [zoneDensityData, setZoneDensityData] = useState(densityData);
 
   // Handle zone change
   const handleZoneChange = (zoneId) => {
     setSelectedZone(zoneId);
     console.log(`📍 Zone changed to: ${zoneId}`);
   };
+
+  // Update zone-specific density data when zone changes or multi-zone data updates
+  useEffect(() => {
+    if (multiZoneDensityData && multiZoneDensityData.zones) {
+      if (selectedZone === 'all') {
+        // Use stadium as default for "all zones" view
+        const stadiumZone = multiZoneDensityData.zones['stadium'];
+        if (stadiumZone) {
+          setZoneDensityData({
+            type: 'density_update',
+            grid: stadiumZone.grid,
+            hotspots: stadiumZone.hotspots,
+            avg_density: stadiumZone.avg_density,
+            max_density: stadiumZone.max_density,
+            phase: stadiumZone.phase,
+            center_location: stadiumZone.center,
+            grid_size: 10,
+            timestamp: multiZoneDensityData.timestamp
+          });
+        }
+      } else {
+        // Use selected zone's data
+        const zoneData = multiZoneDensityData.zones[selectedZone];
+        if (zoneData) {
+          setZoneDensityData({
+            type: 'density_update',
+            grid: zoneData.grid,
+            hotspots: zoneData.hotspots,
+            avg_density: zoneData.avg_density,
+            max_density: zoneData.max_density,
+            phase: zoneData.phase,
+            center_location: zoneData.center,
+            grid_size: 10,
+            timestamp: multiZoneDensityData.timestamp
+          });
+          console.log(`🔥 Loaded density data for ${zoneData.zone_name}: Max ${zoneData.max_density}, Phase: ${zoneData.phase}`);
+        }
+      }
+    } else if (densityData) {
+      // Fallback to legacy densityData if multi-zone not available
+      setZoneDensityData(densityData);
+    }
+  }, [selectedZone, multiZoneDensityData, densityData]);
 
   // Calculate statistics
   const busCount = busData?.buses?.length || 0;
@@ -55,7 +100,7 @@ const LiveOperationsView = ({
       <div className="operations-map-area">
         <MapComponent 
           busData={busData} 
-          densityData={densityData} 
+          densityData={zoneDensityData} 
           firstResponders={firstResponders}
           selectedZone={selectedZone}
         />
@@ -65,7 +110,7 @@ const LiveOperationsView = ({
       <div className="operations-side-panel">
         {/* Risk Indicator */}
         <div className="operations-card risk-card">
-          <CrowdRiskIndicator densityData={densityData} />
+          <CrowdRiskIndicator densityData={zoneDensityData} />
         </div>
 
         {/* Weather Widget */}
