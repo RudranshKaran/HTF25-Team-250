@@ -13,6 +13,7 @@ from .crowd_simulation_service import (
     format_density_summary
 )
 from .history_service import history_manager
+from .ai_inference_service import ai_service
 
 __all__ = [
     'fetch_bmtc_bus_data',
@@ -24,5 +25,6 @@ __all__ = [
     'check_alerts',
     'format_metro_summary',
     'format_density_summary',
-    'history_manager'
+    'history_manager',
+    'ai_service'
 ]

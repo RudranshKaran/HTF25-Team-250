@@ -18,7 +18,7 @@ from app.services import (
     format_bus_summary, format_weather_summary,
     simulate_metro_flow, simulate_crowd_density, 
     check_alerts, format_metro_summary, format_density_summary,
-    history_manager
+    history_manager, ai_service
 )
 from app.services.first_responders_service import (
     get_first_responders_data, format_responders_summary
@@ -406,6 +406,67 @@ async def toggle_demo_mode():
     """Toggle demo mode"""
     demo_mode = config_manager.toggle_demo_mode()
     return {"status": "toggled", "demo_mode": demo_mode}
+
+# ===== AI INFERENCE ENDPOINTS =====
+
+@app.post("/api/ai/insights")
+async def get_crowd_insights(data: dict = None):
+    """Generate AI insights for crowd management"""
+    try:
+        crowd_data = data or latest_density_data or {}
+        insights = ai_service.generate_crowd_insights(crowd_data)
+        return {"status": "success", "insights": insights}
+    except Exception as e:
+        print(f"❌ AI Insights Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
+@app.post("/api/ai/action-plan")
+async def get_action_plan(zone: str = "all", data: dict = None):
+    """Generate action plan to ease crowd"""
+    try:
+        crowd_data = data or latest_density_data or {}
+        summary = crowd_data.get('summary', {})
+        alert_zones = summary.get('critical_zones', []) + summary.get('warning_zones', [])
+        
+        action_plan = ai_service.generate_action_plan(crowd_data, alert_zones or [zone])
+        return {"status": "success", "action_plan": action_plan}
+    except Exception as e:
+        print(f"❌ Action Plan Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
+@app.get("/api/ai/nearest-transportation")
+async def get_nearest_transportation(zone: str = "all"):
+    """Get nearest transportation options"""
+    try:
+        crowd_data = latest_density_data or {}
+        transport = ai_service.find_nearest_transportation(zone, crowd_data)
+        return {"status": "success", "transportation": transport}
+    except Exception as e:
+        print(f"❌ Transportation Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
+@app.post("/api/ai/traffic-diversion")
+async def suggest_traffic_diversion(zone: str = "all", data: dict = None):
+    """Get traffic diversion recommendations"""
+    try:
+        crowd_data = data or latest_density_data or {}
+        diversion = ai_service.suggest_traffic_diversion(zone, crowd_data)
+        return {"status": "success", "diversion": diversion}
+    except Exception as e:
+        print(f"❌ Diversion Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
+@app.get("/api/ai/report")
+async def generate_crowd_report(period: str = "1hour"):
+    """Generate crowd management report"""
+    try:
+        crowd_data = latest_density_data or {}
+        alerts = history_manager.get_history_summary().get('alerts', [])
+        report = ai_service.generate_report(crowd_data, alerts, period)
+        return {"status": "success", "report": report}
+    except Exception as e:
+        print(f"❌ Report Error: {e}")
+        return {"status": "error", "message": str(e)}, 500
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

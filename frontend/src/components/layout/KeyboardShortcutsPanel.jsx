@@ -12,6 +12,7 @@ const KeyboardShortcutsPanel = ({ isOpen, onClose }) => {
         { keys: ['2'], description: 'Go to Analytics' },
         { keys: ['3'], description: 'Go to Alerts & History' },
         { keys: ['4'], description: 'Go to Fleet Management' },
+        { keys: ['6'], description: 'Go to AI Insights' },
         { keys: ['5'], description: 'Go to System Control' },
       ]
     },

@@ -33,6 +33,7 @@ import AnalyticsDashboardView from './components/views/AnalyticsDashboardView';
 import AlertsMonitoringView from './components/views/AlertsMonitoringView';
 import FleetManagementView from './components/views/FleetManagementView';
 import SystemControlView from './components/views/SystemControlView';
+import CrowdInsightsView from './components/views/CrowdInsightsView';
 
 import './App.css';
 
@@ -66,7 +67,8 @@ function App() {
   const alertDedupeMap = useRef(new Map()); // Track recent alerts for deduplication
 
   // New Dashboard Layout State
-  const [activeSection, setActiveSection] = useState('operations'); // operations, analytics, alerts, fleet, control
+  const [activeSection, setActiveSection] = useState('operations'); // operations, analytics, alerts, fleet, control, insights
+  const [selectedZone, setSelectedZone] = useState('all');
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
   // WebSocket connection logic
@@ -663,6 +665,14 @@ function App() {
                 connectionStatus={connectionStatus}
                 onExport={exportData}
                 onTestMessage={sendTestMessage}
+              />
+            )}
+
+            {activeSection === 'insights' && (
+              <CrowdInsightsView 
+                multiZoneDensityData={multiZoneDensityData}
+                alerts={alerts}
+                selectedZone={selectedZone}
               />
             )}
           </div>
