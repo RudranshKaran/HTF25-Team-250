@@ -29,10 +29,14 @@ const LiveOperationsView = ({
   // Update zone-specific density data when zone changes or multi-zone data updates
   useEffect(() => {
     if (multiZoneDensityData && multiZoneDensityData.zones) {
+      console.log('📊 Multi-zone data available. Zones:', Object.keys(multiZoneDensityData.zones));
+      console.log('📍 Selected zone:', selectedZone);
+      
       if (selectedZone === 'all') {
         // Use stadium as default for "all zones" view
         const stadiumZone = multiZoneDensityData.zones['stadium'];
         if (stadiumZone) {
+          console.log('✅ Loading stadium zone for "all" view');
           setZoneDensityData({
             type: 'density_update',
             grid: stadiumZone.grid,
@@ -44,11 +48,19 @@ const LiveOperationsView = ({
             grid_size: 10,
             timestamp: multiZoneDensityData.timestamp
           });
+        } else {
+          console.error('❌ Stadium zone not found in multi-zone data');
         }
       } else {
         // Use selected zone's data
         const zoneData = multiZoneDensityData.zones[selectedZone];
         if (zoneData) {
+          console.log(`✅ Loading ${zoneData.zone_name}`);
+          console.log(`   - Max Density: ${zoneData.max_density}`);
+          console.log(`   - Phase: ${zoneData.phase}`);
+          console.log(`   - Center: [${zoneData.center[0]}, ${zoneData.center[1]}]`);
+          console.log(`   - Hotspots: ${zoneData.hotspots.length}`);
+          
           setZoneDensityData({
             type: 'density_update',
             grid: zoneData.grid,
@@ -60,12 +72,16 @@ const LiveOperationsView = ({
             grid_size: 10,
             timestamp: multiZoneDensityData.timestamp
           });
-          console.log(`🔥 Loaded density data for ${zoneData.zone_name}: Max ${zoneData.max_density}, Phase: ${zoneData.phase}`);
+        } else {
+          console.error(`❌ Zone "${selectedZone}" not found in multi-zone data`);
+          console.error('   Available zones:', Object.keys(multiZoneDensityData.zones));
         }
       }
-    } else if (densityData) {
-      // Fallback to legacy densityData if multi-zone not available
-      setZoneDensityData(densityData);
+    } else {
+      console.warn('⚠️ Multi-zone data not available, using legacy densityData');
+      if (densityData) {
+        setZoneDensityData(densityData);
+      }
     }
   }, [selectedZone, multiZoneDensityData, densityData]);
 
