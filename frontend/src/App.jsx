@@ -130,7 +130,10 @@ function App() {
           case 'multi_zone_density_update':
             // Update multi-zone density data (new format)
             console.log(`🔥 Multi-Zone: ${data.summary?.total_zones || 0} zones monitored`);
+            console.log('📦 Multi-zone data received:', data);
+            console.log('🗺️ Available zones:', Object.keys(data.zones || {}));
             setMultiZoneDensityData(data);
+            console.log('✅ Multi-zone data stored in state');
             
             // Also update densityData based on selectedZone for the heatmap
             // This will be handled in LiveOperationsView
